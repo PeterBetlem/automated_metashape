@@ -1,0 +1,9 @@
+# This is an example yaml configuration for the photo background removal script
+# It is fully compatible with the UC Davis and UNIS Metashape yml formatting.
+
+# The path to the directory of photos
+# If there are multiple photo folders, set path to the folder that contains all the photo folders
+photo_path: 'C:\Users\Peter\OneDrive\Bilder\test'
+
+# Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
+output_path: 'C:\Users\Peter\OneDrive\Bilder\test\masks'
