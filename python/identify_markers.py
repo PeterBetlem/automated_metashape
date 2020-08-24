@@ -236,7 +236,7 @@ if __name__ == "__main__":
         config_file = "../config/identify_markers_config.yml"
         
     cfg = read_yaml.read_yaml(config_file)
-    if cfg["detectGCPs"]["enabled"]:
+    if "detectGCPs" in cfg and cfg["detectGCPs"]["enabled"]:
         B = real_world_positions(cfg)
         A = marker_detection(cfg)
     else:

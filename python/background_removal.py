@@ -30,7 +30,7 @@ from read_yaml import read_yaml
 
 manual_config_file = "../config/background_removal_config.yml"
 
-def extract_object(cfg_file, rename = True):
+def extract_object(cfg, rename = True):
     """
     YML configuration file which specifies 
         photo_path: 
@@ -46,10 +46,7 @@ def extract_object(cfg_file, rename = True):
     """
     print("!Please be advised that the code (currently) only works for a single dir. of images!")
     
-    # read the YML configuration file with input
-    # TODO: move rename parameter to cfg file
-    cfg = read_yaml(cfg_file)
-    
+   
     # Scan through the photo_path dir and compile all accepted images
     a = glob.iglob(os.path.join(cfg["photo_path"],"**","*.*"))   #(([jJ][pP][gG])|([tT][iI][fF]))
     b = [path for path in a]
@@ -113,6 +110,10 @@ if __name__ == "__main__":
         config_file = sys.argv[1]
     except:
         config_file = manual_config_file
-        
-    extract_object(config_file)
+    
+    # read the YML configuration file with input
+    # TODO: move rename parameter to cfg file
+    cfg = read_yaml(config_file)
+    if "extractObject" in cfg and cfg["extractObject"]["enabled"]:
+        extract_object(cfg)
 

@@ -7,3 +7,7 @@ photo_path: 'C:\Users\Peter\OneDrive\Bilder\test'
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
 output_path: 'C:\Users\Peter\OneDrive\Bilder\test\masks'
+
+extractObject:
+    enabled: True
+    extraction_method: None # TODO: Will have to be configured correctly...
