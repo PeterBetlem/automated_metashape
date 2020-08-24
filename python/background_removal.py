@@ -86,7 +86,11 @@ def extract_object(cfg_file, rename = True):
             frame[out_mask == 0] = 255
             output_path = pathlib.Path(cfg["photo_path"],"processed",pathlib.Path(filename).name)
             output_path.parent.mkdir(parents=True,exist_ok=True)
-            cv.imwrite(str(output_path),frame)
+            cv.imwrite(output_path.as_posix(),frame)
+            
+            #cv.imshow('ImageWindow', img)
+            #cv.waitKey()
+            
 
     # Rename the original media folders to be compatible with the Metashape scripts, but keep a backup!
     if rename:
