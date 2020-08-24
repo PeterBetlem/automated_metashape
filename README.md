@@ -59,9 +59,7 @@ All of the parameters defining the Metashape workflow are specified in a YAML co
 This includes directories of input and output files, workflow steps to include, quality settings, and many other parameters.
 This configuration file is compatible with the UC Davis standardised Agisoft Metashape workflow.
 
-An example configuration file is provided in this repo at `config/example.yml`. 
-The file contains comments explaining the purpose of each customizable parameter.
-To prepare a customized workflow, copy the `config/example.yml` file to a new location, edit the parameter values to meet your specifications, save it, and then run the Python script from the command line as described above, passing it the location of the customized configuration file. 
+An example configuration file is provided in this repo at `config/{example}.yml` for each of the scripts. 
+The files contain comments explaining the purpose of each customizable parameter.
+To prepare a customized workflow, copy the `config/{example}.yml` file to a new location, edit the parameter values to meet your specifications, save it, and then run the Python script from the command line as described above, passing it the location of the customized configuration file. 
 Do not remove or add parameters to the configuration file; adding will have no effect unless the Python code is changed along with the addition, and removing will produce errors.
-
-The workflow configuration is saved in a procesing log at the end of a workflow run (see below).
