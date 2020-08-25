@@ -16,6 +16,12 @@ import yaml
 import pathlib
 import Metashape
 
+try:
+    from cv2 import aruco
+except:
+    print("Unable to load OpenCV2 aruco libraries.")
+    pass
+
 """
 Based on UCDavis work, see https://github.com/ucdavis/metashape,
 Part below based on https://stackoverflow.com/a/25896596/237354
@@ -28,11 +34,8 @@ def convert_paths_and_commands(a_dict):
             if isinstance(v, str):
                 if v and ('path' in k):    # all paths that are supplied in the config file are automatically converted to Path type
                     a_dict[k] = pathlib.Path(v)
-                elif v and 'Metashape' in v and not ('path' in k) and not ('project' in k): # for Metashape compatibility
+                elif v and ('Metashape' in v or 'aruco' in v) and not ('path' in k) and not ('project' in k): # for Metashape compatibility
                     a_dict[k] = eval(v)
-                # TODO: add other commands that need eval
-                # elif v and 'Metashape' in v and not ('path' in k) and not ('project' in k): # for Metashape compatibility
-                #     a_dict[k] = eval(v)
             elif isinstance(v, list):
                 a_dict[k] =  [eval(item) for item in v if("Metashape" in item)]
         else:

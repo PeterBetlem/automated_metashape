@@ -4,7 +4,7 @@
 @institution: University Centre in Svalbard, Svalbard
 @year: 2020
 
-The following classes are based on the work conducted by UC Davis, which in full
+The following classes are based on the UC Davis work, which in full
 is documented here: https://github.com/ucdavis/metashape.
 """
 # Import libraries
@@ -251,7 +251,7 @@ class MetashapeProcessing:
             
         # add masks if present (preferably in same 1XXMEDIA folder, with suffix {image_name}_mask.img_ext)
         # TODO: Try function below
-        if self.cfg["masks"]["enabled"]:
+        if "masks" in self.cfg and self.cfg["masks"]["enabled"]:
             self.logger.warning('Masks are currently an unsupported feature, use with caution...')
             for cam in self.doc.chunk.cameras:
                 self.doc.chunk.importMasks(

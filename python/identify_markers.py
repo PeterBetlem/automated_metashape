@@ -66,7 +66,7 @@ class marker_detection():
         combined = [pool.apply(
             _assign_marker_coordinates_on_image,
             args = (x,
-                    aruco.__dict__[self.cfg["detectGCPs"]["aruco_dict"].split("aruco.")[1]],
+                    self.cfg["detectGCPs"]["aruco_dict"],
                     self.cfg["detectGCPs"]["corner"])
             ) for x in photo_files]
         
@@ -209,7 +209,7 @@ class real_world_positions():
         frame = cv2.imread(self.cfg["detectGCPs"]["template"]["template_file_path"].as_posix())
         self.image_markers = _assign_marker_coordinates_on_image(
             self.cfg["detectGCPs"]["template"]["template_file_path"].as_posix(),
-            aruco.__dict__[self.cfg["detectGCPs"]["aruco_dict"].split("aruco.")[1]]
+            self.cfg["detectGCPs"]["aruco_dict"]
             )
         
         # transforming pixel values to real world distances based on known
