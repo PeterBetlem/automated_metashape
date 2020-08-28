@@ -231,7 +231,8 @@ class MetashapeProcessing:
         self.logger.info('Initiating add_photos step...')
         a = glob.iglob(str(Path(self.cfg["photo_path"],"**","*.*")))   #(([jJ][pP][gG])|([tT][iI][fF]))
         b = [path for path in a]
-        photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x))]
+        photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x) and (not re.search("_mask.",x)))]
+        
         
         ## Add them
         if self.cfg["multispectral"]:
@@ -240,7 +241,22 @@ class MetashapeProcessing:
         else:
             self.doc.chunk.addPhotos(photo_files)
             self.logger.info('Photos added to project.')
-        
+            
+        # add masks if present (preferably in same 1XXMEDIA folder, with suffix {image_name}_mask.img_ext)
+        # TODO: Try function below
+        if "masks" in self.cfg and self.cfg["masks"]["enabled"]:
+            self.logger.warning('Masks are currently a semi-unsupported feature, use with caution...')
+            for cam in self.doc.chunk.cameras:
+                try:
+                    self.doc.chunk.importMasks(
+                        path = str(Path(self.cfg["masks"]["mask_path"],'{filename}_mask.JPG')),
+                        cameras = [cam], 
+                        source = self.cfg["masks"]["mask_source"]
+                        )
+                    self.logger.info(f'Applied mask to camera {cam}')
+                except:
+                    pass
+            
         ## Need to change the label on each camera so that it includes the containing folder
         for camera in self.doc.chunk.cameras:
             path = camera.photo.path
@@ -249,16 +265,7 @@ class MetashapeProcessing:
             camera.label = newlabel
         self.logger.info('Successfully relabeled cameras.')
             
-        # add masks if present (preferably in same 1XXMEDIA folder, with suffix {image_name}_mask.img_ext)
-        # TODO: Try function below
-        if "masks" in self.cfg and self.cfg["masks"]["enabled"]:
-            self.logger.warning('Masks are currently an unsupported feature, use with caution...')
-            for cam in self.doc.chunk.cameras:
-                self.doc.chunk.importMasks(
-                    path = self.cfg["masks"]["mask_dir"],
-                    cameras = [cam], 
-                    source = self.cfg["masks"]["mask_source"]
-                    )
+
     
         self.doc.save()
         self.logger.info('Finalised adding photos.')
@@ -281,10 +288,10 @@ class MetashapeProcessing:
                 print(row.camera + " camera not found in project")
                 continue
             
-            marker = _get_marker(self.doc.chunk, str(row.marker))
+            marker = _get_marker(self.doc.chunk, str(int(row.marker)))
             if not marker:
                 marker = self.doc.chunk.addMarker()
-                marker.label = str(row.marker)
+                marker.label = str(int(row.marker))
                 
             marker.projections[camera] = Metashape.Marker.Projection((float(row.x), float(row.y)), True)
     
@@ -293,10 +300,10 @@ class MetashapeProcessing:
         marker_coordinate_data = pd.read_csv(path,names=["marker","x","y","z"])
         
         for index, row in marker_coordinate_data.iterrows():
-            marker = _get_marker(self.doc.chunk, str(row.marker))
+            marker = _get_marker(self.doc.chunk, str(int(row.marker)))
             if not marker:
                 marker = self.doc.chunk.addMarker()
-                marker.label = str(row.marker)
+                marker.label = str(int(row.marker))
                 
             marker.reference.location = (float(row.x), float(row.y), float(row.z))
             marker.reference.accuracy = (

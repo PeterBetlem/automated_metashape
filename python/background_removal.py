@@ -105,6 +105,17 @@ def extract_object(cfg, rename = True):
                 )
             )
     
+# def create_BG_mask(cfg):
+#     if "masks" in cfg and cfg["masks"]["enabled"] and cfg["masks"]["generate"]:
+#         a = glob.iglob(str(pathlib.Path(cfg["photo_path"],"**","*.*")))   #(([jJ][pP][gG])|([tT][iI][fF]))
+#         b = [path for path in a]
+#         photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x) and (not re.search("_mask.",x)))] 
+        
+#         for file in photo_files:
+#             if pathlib.Path(file).name in cfg["masks"]['file_list']:
+#                 print(pathlib.Path(file).name)
+                
+    
 if __name__ == "__main__":
     try:
         config_file = sys.argv[1]
