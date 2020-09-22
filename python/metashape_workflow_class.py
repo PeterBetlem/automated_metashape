@@ -606,6 +606,34 @@ class MetashapeProcessing:
             self.doc.chunk.buildTexture(**texture_parameters)
             self.doc.save()
             self.logger.info('Textures constructed.')
+
+    def build_tiled_model(self):
+        '''
+        Build tiled model
+        '''
+        
+        self.logger.info('Generating tiles for tiled model...')
+                
+        raise
+        buildTiles_dict = [
+            ]
+        
+        tile_parameters = {}
+        for key, value in self.cfg["buildTiles"].items():
+            if key in buildTiles_dict:
+                tile_parameters[key] = value 
+                
+        if self.network:
+            # build tiled model
+            task = Metashape.Tasks.BuildTexture()
+            task.decode(tile_parameters)
+            self._encode_task(task)
+            self.logger.info('Texture generation task added to network batch list.')
+            
+        else:            
+            self.doc.chunk.buildTexture(**tile_parameters)
+            self.doc.save()
+            self.logger.info('Textures constructed.')
         
     def export_report(self):
         """
