@@ -9,17 +9,17 @@ load_project: ""
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
-photo_path: 'C:\Users\Peter\OneDrive\Bilder\test'
+photo_path: 
 multispectral: False # Is this a multispectral photo set? If RGB, set to False.
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
-output_path: 'C:\Users\Peter\OneDrive\Bilder\test\metashape'
+output_path: 
 
 # Path to save Metashape project file (.psx). Will be created if does not exist
-project_path: 'C:\Users\Peter\OneDrive\Bilder\test\metashape'
+project_path: 
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
-run_name: "test_name_run001"
+run_name: 
 
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
 project_crs: "EPSG::32633" # 32633 is WGS1984 UTM 33N
@@ -30,14 +30,14 @@ subdivide_task: True
 
 # Enable Networking:
 networkProcessing:
-    enabled: False
-    server_ip: 1.1.1.1 # Host Server IP address
+    enabled: True
+    server_ip: HostName # Host Server IP address
     
 #### Detect markers
 detectGCPs:
     enabled: True 
     aruco_dict: aruco.DICT_6X6_250 # options include: aruco.DICT_6X6_250, aruco.DICT_4X4_50
-    corner: "centre" # options: bottomleft (=1), topleft (2), topright (3), bottomright (4), centre (0).
+    corner: "topright" # options: bottomleft (=1), topleft (2), topright (3), bottomright (4), centre (0).
     template:
         enabled: True # Keep false when using geopackage with long/lat data
         template_file_path: "../markers/markers_circle.png"
@@ -45,7 +45,7 @@ detectGCPs:
     
 #### Object extraction:
 extractObject:
-    enabled: True
+    enabled: False
     extraction_method: None # TODO: Will have to be configured correctly...
 
 #### Processing parameters:
@@ -71,13 +71,14 @@ calibrateReflectance: # (Metahsape: calibrateReflectance)
 
 alignPhotos: # (Metashape: alignPhotos)
     enabled: True
-    downscale: 1 # Recommended: 1. How much to coarsen the photos when searching for tie points. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
+    downscale: 4 # Recommended: 1. How much to coarsen the photos when searching for tie points. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
-
-#masks:
-#    enabled: False # Default, only enable if you have images with masks :)
-#    mask_path: "Path here" # Has to point to dir with masks
-#    mask_source: Metashape.MaskSourceFile # Default, other options include: [MaskSourceAlpha, MaskSourceFile, MaskSourceBackground, MaskSourceModel]
+    mask_tiepoints: True
+    
+masks:
+    enabled: True # Default, only enable if you have images with masks :)
+    mask_path:  # Has to point to dir with masks
+    mask_source: Metashape.MaskSourceFile # Default, other options include: [MaskSourceAlpha, MaskSourceFile, MaskSourceBackground, MaskSourceModel]
 
 optimizeCameras: # (Metashape: optimizeCameras) # Remove # to activate :)
     enabled: True

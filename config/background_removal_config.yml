@@ -3,7 +3,7 @@
 
 # The path to the directory of photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
-photo_path: 'C:\Users\Peter\OneDrive\Bilder\test'
+photo_path: 'E:\PeterBetlem\Photogrammetry_test'
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
 output_path: 'C:\Users\Peter\OneDrive\Bilder\test\masks'

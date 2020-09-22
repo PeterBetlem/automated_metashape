@@ -212,6 +212,8 @@ class MetashapeProcessing:
         if self.network:
             self._network_submit_batch()
             
+        del self.doc
+            
     def _encode_task(self, task):
         """
         All tasks need to be encoded before submission to the Agisoft Metashape Network.
@@ -636,10 +638,11 @@ class MetashapeProcessing:
         
         self.logger.info("Project file has been submitted to the pc cluster for processing...")
                     
-        self.doc = Metashape.Document() # needed to remove the lock on the project.    
+        #self.doc = Metashape.Document() # needed to remove the lock on the project.    
+        
         
 if __name__ == "__main__":
-    manual_config_file = "../config/config_with_networking.yml"
+    manual_config_file = "../config/close-range_photogrammetry.yml"
     try:
         config_file = sys.argv[1]
     except:
