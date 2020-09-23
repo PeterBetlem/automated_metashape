@@ -490,6 +490,8 @@ class MetashapeProcessing:
             self._encode_task(task)
             self.logger.info('Depth map and dense cloud tasks added to network batch list.')
             
+            if self.cfg["buildDenseCloud"]["point_confidence"] and self.cfg["buildDenseCloud"]["point_confidence_max"]: 
+                self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Try running it locally.")
     
             # Classify ground points
             if self.cfg["buildDenseCloud"]["classify"]:
@@ -499,6 +501,7 @@ class MetashapeProcessing:
                 self._encode_task(task)
                 self.logger.info('Ground point classification task added to network batch list.')
                 
+            
         else:
             self.doc.chunk.buildDepthMaps(**depth_parameters)
             self.doc.save()
@@ -508,10 +511,17 @@ class MetashapeProcessing:
             self.doc.save()
             self.logger.info('Dense cloud built.')
             
+            if self.cfg["buildDenseCloud"]["point_confidence"] and self.cfg["buildDenseCloud"]["point_confidence_max"]: 
+                self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["buildDenseCloud"]["point_confidence_max"])
+                self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
+                self.doc.chunk.dense_cloud.resetFilters()
+            
             if self.cfg["buildDenseCloud"]["classify"]:
                 self.doc.chunk.dense_cloud.classifyGroundPoints(**classify_parameters)
                 self.doc.save()
                 self.logger.info('Ground points classified.')
+            
+            
             
     def build_mesh(self):
         '''
