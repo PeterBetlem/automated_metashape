@@ -4,7 +4,7 @@ This repo contains various Python scripts that are used for image processing, in
 As a result, the scripts are designed with the standardised Agisoft Metashape Python workflow in mind, utilising a fully compatible YML configuration file
 
 ## Requirements & setup
-**Python**: You need Python (3.5, 3.6, 3.7, or 3.8), and I recommend using the Anaconda distribution and a processing-specific Anaconda environment.
+**Python**: You need Python (3.5, 3.6, 3.7), and I recommend using the Anaconda distribution and a processing-specific Anaconda environment.
 At the bare minimum the following libraries should be installed besides the standard libs:
 - numpy
 - pandas
