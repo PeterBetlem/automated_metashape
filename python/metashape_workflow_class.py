@@ -72,6 +72,7 @@ class MetashapeProcessing:
             )
         
         self._init_logging()
+        self._check_environment()
         self._init_metashape_document()
         
         if "networkProcessing" in self.cfg and self.cfg["networkProcessing"]["enabled"]:
@@ -141,10 +142,15 @@ class MetashapeProcessing:
             
         self.logger.info('')
         
+        
     def _terminate_logging(self):
         self.logger.info('Run completed.')
         self.logger.info('--------------')
-
+        
+    def _check_environment(self):
+        if "onedrive" in str(self.cfg["load_project_path"]).lower():
+            self.logger.error("Detected OneDrive folder for project - background fileupdating causes instability. Terminating...")
+            raise
         
   
     def _init_metashape_document(self):
