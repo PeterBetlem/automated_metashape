@@ -21,6 +21,7 @@ from logging.config import dictConfig
 import yaml
 import numpy as np
 import pandas as pd
+from shutil import copyfile
 
 # import the Metashape functionality
 import Metashape
@@ -51,7 +52,9 @@ def _get_camera(chunk, label):
 
 # Main functions
 class MetashapeProcessing:
-    def __init__(self, config_file):
+    def __init__(self, config_file, logger=logging.getLogger(__name__)):
+        
+        self.logger = logger
         
         self.cfg = read_yaml.read_yaml(config_file)
         self.config_file = config_file
@@ -115,36 +118,45 @@ class MetashapeProcessing:
             }
         }
     
-        self.logger = logging.getLogger(__name__)
-        
-        
         dictConfig(log_dict)
         
-        self.logger.info(f'Initiated logging for Project: {self.run_id}.')
+        if self.cfg["load_project_path"] != "":
+            copyfile(self.cfg["load_project_path"].with_suffix('.log'),
+                  Path(self.cfg["output_path"],self.run_id+'.log')
+                )
+            self.logger.info('--------------')
+            self.logger.info(f'Initiated logging for Project {self.run_id}, loading from previous project.')
+        else:
+            self.logger.info(f'Initiated logging for Project: {self.run_id}.')
+
         self.logger.info(f'Agisoft Metashape Professional Version: {Metashape.app.version}.')
-        self.logger.info('Python package date: 2020/10/23.')
-        self.logger.info('')
-        
-    def _terminate_logging(self):
-        self.logger.info('Run completed.')
+        self.logger.info('Python package date: 2020/10/23.\n')
+
         # open run configuration again. We can't just use the existing cfg file because its objects had already been converted to Metashape objects (they don't write well)
         with open(self.config_file) as file:
             config_full = yaml.load(file, Loader=yaml.SafeLoader)
         self.logger.info('\n### Start of configuration file ###\n'+\
                          yaml.dump(config_full, default_flow_style=False)+\
-                        '### End of configuration file ###')
+                        '### End of configuration file ###\n')
+            
+        self.logger.info('')
+        
+    def _terminate_logging(self):
+        self.logger.info('Run completed.')
+        self.logger.info('--------------')
+
         
   
     def _init_metashape_document(self):
         self.doc = Metashape.Document()
         self.doc.read_only = False
         
-        if self.cfg["load_project"] != "":
-            self.doc.open(self.cfg["load_project"])
-            self.logger.info(f'Loaded existing project {self.cfg["load_project"]}')
+        if self.cfg["load_project_path"] != "":
+            self.doc.open(self.cfg["load_project_path"].resolve().with_suffix('.psx').as_posix())
+            self.logger.info(f'Loaded existing project {self.cfg["load_project_path"]}')
         else:
             # Initialize a chunk, set its CRS as specified
-            self.logger.info(f'Creating new project {self.cfg["load_project"]}')
+            self.logger.info(f'Creating new project {self.cfg["load_project_path"]}')
             self.chunk = self.doc.addChunk()
             self.chunk.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
             self.chunk.marker_crs = Metashape.CoordinateSystem(self.cfg["addGCPs"]["gcp_crs"])
@@ -170,7 +182,8 @@ class MetashapeProcessing:
         
         # TODO: Add all other processing step options here as well
         
-        self.add_photos()
+        if "addPhotos" in self.cfg and self.cfg["addPhotos"]["enabled"]:
+            self.add_photos()
         
         if "addGCPs" in self.cfg and self.cfg["addGCPs"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
@@ -697,5 +710,8 @@ if __name__ == "__main__":
     except:
         config_file = manual_config_file
         
-    
-    MetashapeProcessing(config_file)
+    logger = logging.getLogger(__name__)
+    try:
+        MetashapeProcessing(config_file,logger=logger)
+    except:
+        logger.exception('')
