@@ -55,6 +55,7 @@ class MetashapeProcessing:
     def __init__(self, config_file, logger=logging.getLogger(__name__)):
         
         self.logger = logger
+        self._about()
         
         self.cfg = read_yaml.read_yaml(config_file)
         self.config_file = config_file
@@ -85,7 +86,14 @@ class MetashapeProcessing:
         self.init_tasks()
         
         self._terminate_logging()
-        
+
+    def _about(self):
+        self.__version__ = "2020-oct-23d"
+        self.__author__ = "Peter Betlem"
+        self.__institution__ = "The University Centre in Svalbard"
+        self.__license__ = "BSD 3-Clause License"
+        self.__copyright__ = "(c) 2020, Peter Betlem"
+
     def _init_logging(self):
         # TODO: add configuration to the YML file
         
@@ -131,7 +139,7 @@ class MetashapeProcessing:
             self.logger.info(f'Initiated logging for Project: {self.run_id}.')
 
         self.logger.info(f'Agisoft Metashape Professional Version: {Metashape.app.version}.')
-        self.logger.info('Python package date: 2020/10/23.\n')
+        self.logger.info(f'Python package version: {self.__version__}.\n')
 
         # open run configuration again. We can't just use the existing cfg file because its objects had already been converted to Metashape objects (they don't write well)
         with open(self.config_file) as file:
@@ -285,9 +293,16 @@ class MetashapeProcessing:
             path_parts = path.split("/")[-2:]
             newlabel = "/".join(path_parts)
             camera.label = newlabel
+                       
         self.logger.info('Successfully relabeled cameras.')
             
-
+        if self.cfg["addPhotos"]["enabled"] and self.cfg["addPhotos"]["remove_photo_location_metadata"]:
+            for camera in self.doc.chunk.cameras:
+                camera.reference.location = None
+                camera.reference.rotation = None
+                    
+            self.logger.info('Removed camera reference coordinates for processing.')
+            
     
         self.doc.save()
         self.logger.info('Finalised adding photos.')
@@ -343,17 +358,7 @@ class MetashapeProcessing:
     
         self.doc.save()
         self.logger.info('Ground control points added.')
-
-        # Disable camera locations as reference if specified in YML
-        if self.cfg["addGCPs"]["enabled"] and self.cfg["addGCPs"]["optimize_w_gcps_only"]:
-            self.logger.info('GCP-only optimisation enabled.')
-            n_cameras = len(self.doc.chunk.cameras)
-            for i in range(0, n_cameras):
-                self.doc.chunk.cameras[i].reference.enabled = False
-        
-            self.doc.save()
-            self.logger.info('Disabled camera reference coordinates for processing.')
-    
+   
         return True
         
     def align_photos(self):
