@@ -225,7 +225,7 @@ class real_world_positions():
         
     def real_world_positions_from_gpkg(self):
         print("This function has yet to be implemented...")
-        raise
+        print("Nothing will be outputted. Please format your own marker data according to the template.")
         
         
 if __name__ == "__main__":
