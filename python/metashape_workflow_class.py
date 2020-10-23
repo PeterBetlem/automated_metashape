@@ -122,6 +122,7 @@ class MetashapeProcessing:
         
         self.logger.info(f'Initiated logging for Project: {self.run_id}.')
         self.logger.info(f'Agisoft Metashape Professional Version: {Metashape.app.version}.')
+        self.logger.info('Python package date: 2020/10/23.')
         self.logger.info('')
         
     def _terminate_logging(self):
@@ -171,17 +172,17 @@ class MetashapeProcessing:
         
         self.add_photos()
         
-        if "alignPhotos" in self.cfg and self.cfg["alignPhotos"]["enabled"]:
-            # TODO: find a nicer way to add subdivide_task to all dicts
-            if self.cfg["subdivide_task"]: 
-                self.cfg["alignPhotos"]["subdivide_task"] = self.cfg["subdivide_task"]
-            self.align_photos()
-            
         if "addGCPs" in self.cfg and self.cfg["addGCPs"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["addGCPs"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.add_gcps() # call to original metashape_workflow_functions
+            
+        if "alignPhotos" in self.cfg and self.cfg["alignPhotos"]["enabled"]:
+            # TODO: find a nicer way to add subdivide_task to all dicts
+            if self.cfg["subdivide_task"]: 
+                self.cfg["alignPhotos"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.align_photos()
         
         if "optimizeCameras" in self.cfg and self.cfg["optimizeCameras"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
@@ -323,6 +324,16 @@ class MetashapeProcessing:
     
         self.doc.save()
         self.logger.info('Ground control points added.')
+
+        # Disable camera locations as reference if specified in YML
+        if self.cfg["addGCPs"]["enabled"] and self.cfg["addGCPs"]["optimize_w_gcps_only"]:
+            self.logger.info('GCP-only optimisation enabled.')
+            n_cameras = len(self.doc.chunk.cameras)
+            for i in range(0, n_cameras):
+                self.doc.chunk.cameras[i].reference.enabled = False
+        
+            self.doc.save()
+            self.logger.info('Disabled camera reference coordinates for processing.')
     
         return True
         
