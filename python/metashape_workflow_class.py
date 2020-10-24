@@ -80,6 +80,7 @@ class MetashapeProcessing:
             self._init_network_processing()
             self.network = True
             self.logger.info('Network mode activated.')
+            self._log_parameters(stage="networkProcessing") 
         else:
             self.network = False
         
@@ -88,7 +89,7 @@ class MetashapeProcessing:
         self._terminate_logging()
 
     def _about(self):
-        self.__version__ = "2020-oct-23d"
+        self.__version__ = "2020-oct-24"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -142,14 +143,27 @@ class MetashapeProcessing:
         self.logger.info(f'Python package version: {self.__version__}.\n')
 
         # open run configuration again. We can't just use the existing cfg file because its objects had already been converted to Metashape objects (they don't write well)
+        # with open(self.config_file) as file:
+        #     config_full = yaml.load(file, Loader=yaml.SafeLoader)
+        # self.logger.info('\n### Start of configuration file ###\n'+\
+        #                  yaml.dump(config_full, default_flow_style=False)+\
+        #                 '### End of configuration file ###\n')
+        #self._log_parameters()    
+        #self.logger.info('')
+        
+    def _log_parameters(self,stage=None):
         with open(self.config_file) as file:
             config_full = yaml.load(file, Loader=yaml.SafeLoader)
-        self.logger.info('\n### Start of configuration file ###\n'+\
-                         yaml.dump(config_full, default_flow_style=False)+\
-                        '### End of configuration file ###\n')
-            
-        self.logger.info('')
         
+        if not stage:
+            config_dump = {k: v for k, v in config_full.items() if not isinstance(config_full[k],dict)}
+            stage = "startup"
+        else:
+            config_dump = {k: v for k, v in config_full.items() if k == stage}
+        
+        self.logger.info(f'\n### Start of input file configuration for {stage}-stage ###\n'+\
+                         yaml.dump(config_dump, default_flow_style=False)+\
+                        '### End of input file configuration for {stage}-stage ###\n')
         
     def _terminate_logging(self):
         self.logger.info('Run completed.')
@@ -177,6 +191,7 @@ class MetashapeProcessing:
         
         # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
         self.doc.save(str(self.project_file))
+        self._log_parameters()
         self.logger.info(f'Saved project as {str(self.project_file)}')
         
     def _init_network_processing(self):
@@ -198,42 +213,49 @@ class MetashapeProcessing:
         
         if "addPhotos" in self.cfg and self.cfg["addPhotos"]["enabled"]:
             self.add_photos()
+            self._log_parameters(stage="addPhotos")
         
         if "addGCPs" in self.cfg and self.cfg["addGCPs"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["addGCPs"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.add_gcps() # call to original metashape_workflow_functions
+            self._log_parameters(stage="addGCPs")
             
         if "alignPhotos" in self.cfg and self.cfg["alignPhotos"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["alignPhotos"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.align_photos()
+            self._log_parameters(stage="alignPhotos")
         
         if "optimizeCameras" in self.cfg and self.cfg["optimizeCameras"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["optimizeCameras"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.optimize_cameras()
+            self._log_parameters(stage="optimizeCameras")
         
         if "buildDenseCloud" in self.cfg and self.cfg["buildDenseCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_dense_cloud()
+            self._log_parameters(stage="buildDenseCloud")
         
         if "buildMesh" in self.cfg and self.cfg["buildMesh"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildMesh"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_mesh()
+            self._log_parameters(stage="buildMesh")
             
         if "buildTexture" in self.cfg and self.cfg["buildTexture"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildTexture"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_texture()
+            self._log_parameters(stage="buildTexture")
             
         self.export_report()
         
@@ -355,7 +377,8 @@ class MetashapeProcessing:
             self.cfg["addGCPs"]["marker_location_accuracy"]
             )
         self.doc.chunk.marker_projection_accuracy = self.cfg["addGCPs"]["marker_projection_accuracy"]
-    
+        self.doc.chunk.updateTransform()
+
         self.doc.save()
         self.logger.info('Ground control points added.')
    
@@ -449,9 +472,8 @@ class MetashapeProcessing:
         # Disable camera locations as reference if specified in YML
         if self.cfg["addGCPs"]["enabled"] and self.cfg["addGCPs"]["optimize_w_gcps_only"]:
             self.logger.info('GCP-only optimisation enabled.')
-            n_cameras = len(self.doc.chunk.cameras)
-            for i in range(0, n_cameras):
-                self.doc.chunk.cameras[i].reference.enabled = False
+            for camera in self.doc.chunk.cameras:
+                camera.reference.enabled = False
         
         if self.network:
             
