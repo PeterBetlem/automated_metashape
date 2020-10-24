@@ -89,7 +89,7 @@ class MetashapeProcessing:
         self._terminate_logging()
 
     def _about(self):
-        self.__version__ = "2020-oct-24"
+        self.__version__ = "2020-oct-24c"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -134,10 +134,14 @@ class MetashapeProcessing:
             copyfile(self.cfg["load_project_path"].with_suffix('.log'),
                   Path(self.cfg["output_path"],self.run_id+'.log')
                 )
+           
             self.logger.info('--------------')
-            self.logger.info(f'Initiated logging for Project {self.run_id}, loading from previous project.')
+            self.logger.info('Continued run initiated.')
         else:
-            self.logger.info(f'Initiated logging for Project: {self.run_id}.')
+            self.logger.info('--------------')
+            self.logger.info('Fresh run initiated.')
+        self.logger.info(f'Runtime id: {self.run_id}')
+        self.logger.info('--------------')
 
         self.logger.info(f'Agisoft Metashape Professional Version: {Metashape.app.version}.')
         self.logger.info(f'Python package version: {self.__version__}.\n')
@@ -151,7 +155,7 @@ class MetashapeProcessing:
         #self._log_parameters()    
         #self.logger.info('')
         
-    def _log_parameters(self,stage=None):
+    def _return_parameters(self,stage=None,log=None):
         with open(self.config_file) as file:
             config_full = yaml.load(file, Loader=yaml.SafeLoader)
         
@@ -161,13 +165,18 @@ class MetashapeProcessing:
         else:
             config_dump = {k: v for k, v in config_full.items() if k == stage}
         
-        self.logger.info(f'\n### Start of input file configuration for {stage}-stage ###\n'+\
+        parameters = f'\n\n### Start of input file configuration for {stage}-stage ###\n'+\
                          yaml.dump(config_dump, default_flow_style=False)+\
-                        '### End of input file configuration for {stage}-stage ###\n')
+                         f'### End of input file configuration for {stage}-stage ###\n'
+        if log:
+            self.logger.info(parameters)
+        else:
+            return parameters
         
     def _terminate_logging(self):
-        self.logger.info('Run completed.')
         self.logger.info('--------------')
+        self.logger.info('Run completed.')
+        self.logger.info('--------------\n')
         
     def _check_environment(self):
         if "onedrive" in str(self.cfg["load_project_path"]).lower():
@@ -191,8 +200,7 @@ class MetashapeProcessing:
         
         # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
         self.doc.save(str(self.project_file))
-        self._log_parameters()
-        self.logger.info(f'Saved project as {str(self.project_file)}')
+        self.logger.info(f'Saved project as {str(self.project_file)}'+self._return_parameters())
         
     def _init_network_processing(self):
         try:
@@ -213,49 +221,42 @@ class MetashapeProcessing:
         
         if "addPhotos" in self.cfg and self.cfg["addPhotos"]["enabled"]:
             self.add_photos()
-            self._log_parameters(stage="addPhotos")
         
         if "addGCPs" in self.cfg and self.cfg["addGCPs"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["addGCPs"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.add_gcps() # call to original metashape_workflow_functions
-            self._log_parameters(stage="addGCPs")
             
         if "alignPhotos" in self.cfg and self.cfg["alignPhotos"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["alignPhotos"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.align_photos()
-            self._log_parameters(stage="alignPhotos")
         
         if "optimizeCameras" in self.cfg and self.cfg["optimizeCameras"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["optimizeCameras"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.optimize_cameras()
-            self._log_parameters(stage="optimizeCameras")
         
         if "buildDenseCloud" in self.cfg and self.cfg["buildDenseCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_dense_cloud()
-            self._log_parameters(stage="buildDenseCloud")
         
         if "buildMesh" in self.cfg and self.cfg["buildMesh"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildMesh"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_mesh()
-            self._log_parameters(stage="buildMesh")
             
         if "buildTexture" in self.cfg and self.cfg["buildTexture"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildTexture"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_texture()
-            self._log_parameters(stage="buildTexture")
             
         self.export_report()
         
@@ -327,7 +328,7 @@ class MetashapeProcessing:
             
     
         self.doc.save()
-        self.logger.info('Finalised adding photos.')
+        self.logger.info('Finalised adding photos.'+self._return_parameters(stage="addPhotos"))
         
     def add_gcps(self):
         '''
@@ -380,7 +381,7 @@ class MetashapeProcessing:
         self.doc.chunk.updateTransform()
 
         self.doc.save()
-        self.logger.info('Ground control points added.')
+        self.logger.info('Ground control points added.'+self._return_parameters(stage="addGCPs"))
    
         return True
         
@@ -430,8 +431,12 @@ class MetashapeProcessing:
             task = Metashape.Tasks.AlignCameras()
             task.decode(align_parameters)
             self._encode_task(task)
-            self.logger.info('Photo-alignment tasks added to network batch list.')
             
+            if self.cfg["alignPhotos"]["enabled"] and self.cfg["alignPhotos"]["double_alignment"]:
+                self.logger.warning("Re-alignment of non-aligned photos currently only supported in non-server mode...")
+                
+            self.logger.info('Photo-alignment tasks added to network batch list.'+self._return_parameters(stage="alignPhotos"))
+                
         else:
             self.doc.chunk.matchPhotos(**match_parameters
                 )
@@ -439,7 +444,25 @@ class MetashapeProcessing:
             self.doc.chunk.alignCameras(**align_parameters
                 )
             self.doc.save()
-            self.logger.info('Cameras aligned.')
+            
+            if self.cfg["alignPhotos"]["enabled"] and self.cfg["alignPhotos"]["double_alignment"]:
+                align_parameters["reset_alignment"] = False
+                aligned_photos = []   # empty list
+                for camera in self.doc.chunk.cameras:
+                    if camera.transform==None:
+                        aligned_photos.append(camera)
+               
+                if len(aligned_photos)>0:
+                    self.logger.info(f"Detected {len(aligned_photos)} cameras that failed alignment. Repeating alignment stage...")
+                    self.doc.chunk.alignCameras(aligned_photos,**align_parameters)
+                    self.doc.save()
+                    aligned_photos = []   # empty list
+                    for camera in self.doc.chunk.cameras:
+                        if camera.transform==None:
+                            aligned_photos.append(camera)
+                    
+                    self.logger.info(f"{len(aligned_photos)} non-aligned cameras remain.")
+            self.logger.info('Cameras aligned.'+self._return_parameters(stage="alignPhotos"))
             
     def optimize_cameras(self):
         '''
@@ -480,14 +503,14 @@ class MetashapeProcessing:
             task = Metashape.Tasks.OptimizeCameras()
             task.decode(optimize_parameters)
             self._encode_task(task)
-            self.logger.info('Alignment-optimisation task added to network batch list.')
+            self.logger.info('Alignment-optimisation task added to network batch list.'+self._return_parameters(stage="optimizeCameras"))
             
         else:
             self.doc.chunk.optimizeCameras(
                 **optimize_parameters
                 )
             self.doc.save()
-            self.logger.info('Optimised camera alignment.')
+            self.logger.info('Optimised camera alignment.'+self._return_parameters(stage="optimizeCameras"))
             
     def build_dense_cloud(self):
         
@@ -577,6 +600,8 @@ class MetashapeProcessing:
                 self.doc.chunk.dense_cloud.classifyGroundPoints(**classify_parameters)
                 self.doc.save()
                 self.logger.info('Ground points classified.')
+                
+        self._return_parameters(stage="buildDenseCloud",log=True)
             
             
             
@@ -612,13 +637,13 @@ class MetashapeProcessing:
             task = Metashape.Tasks.BuildModel()
             task.decode(mesh_parameters)
             self._encode_task(task)
-            self.logger.info('Mesh-building task added to network batch list.')
+            self.logger.info('Mesh-building task added to network batch list.'+self._return_parameters(stage="buildMesh"))
                 
 
         else:
             self.doc.chunk.buildModel(**mesh_parameters)
             self.doc.save()
-            self.logger.info('Mesh has been constructed.')
+            self.logger.info('Mesh has been constructed.'+self._return_parameters(stage="buildMesh"))
     
     def build_texture(self):
         '''
@@ -664,7 +689,7 @@ class MetashapeProcessing:
             task = Metashape.Tasks.BuildTexture()
             task.decode(texture_parameters)
             self._encode_task(task)
-            self.logger.info('Texture generation task added to network batch list.')
+            self.logger.info('Texture generation task added to network batch list.'+self._return_parameters(stage="buildTexture"))
             
         else:
             self.doc.chunk.buildUV(**uv_parameters)
@@ -672,7 +697,7 @@ class MetashapeProcessing:
             
             self.doc.chunk.buildTexture(**texture_parameters)
             self.doc.save()
-            self.logger.info('Textures constructed.')
+            self.logger.info('Textures constructed.'+self._return_parameters(stage="buildTexture"))
 
     def build_tiled_model(self):
         '''
