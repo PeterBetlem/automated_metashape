@@ -132,16 +132,16 @@ def _assign_marker_coordinates_on_image(filename,aruco_dict,corner=None):
         data = data.reset_index()
         
         # specifying the corner for which the pixel coords are reported
-        if corner == "bottomleft": # as defined by the OpenCV Aruco Library
+        if corner == "topleft": # as defined by the OpenCV Aruco Library
             x_data = data[data['level_1']=='x'].c1.values
             y_data = data[data['level_1']=='y'].c1.values
-        elif corner == "topleft":
+        elif corner == "topright":
             x_data = data[data['level_1']=='x'].c2.values
             y_data = data[data['level_1']=='y'].c2.values
-        elif corner == "topright":
+        elif corner == "bottomright":
             x_data = data[data['level_1']=='x'].c3.values
             y_data = data[data['level_1']=='y'].c3.values
-        elif corner == "bottomright":
+        elif corner == "bottomleft":
             x_data = data[data['level_1']=='x'].c4.values
             y_data = data[data['level_1']=='y'].c4.values
         else:
