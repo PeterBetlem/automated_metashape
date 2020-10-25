@@ -52,6 +52,14 @@ def _get_camera(chunk, label):
 
 # Main functions
 class MetashapeProcessing:
+
+    def _about(self):
+        self.__version__ = "2020-oct-25"
+        self.__author__ = "Peter Betlem"
+        self.__institution__ = "The University Centre in Svalbard"
+        self.__license__ = "BSD 3-Clause License"
+        self.__copyright__ = "(c) 2020, Peter Betlem"
+        
     def __init__(self, config_file, logger=logging.getLogger(__name__)):
         
         self.logger = logger
@@ -88,13 +96,6 @@ class MetashapeProcessing:
         
         self._terminate_logging()
 
-    def _about(self):
-        self.__version__ = "2020-oct-24c"
-        self.__author__ = "Peter Betlem"
-        self.__institution__ = "The University Centre in Svalbard"
-        self.__license__ = "BSD 3-Clause License"
-        self.__copyright__ = "(c) 2020, Peter Betlem"
-
     def _init_logging(self):
         # TODO: add configuration to the YML file
         
@@ -130,7 +131,7 @@ class MetashapeProcessing:
     
         dictConfig(log_dict)
         
-        if self.cfg["load_project_path"] != "":
+        if self.cfg["load_project_path"]:
             copyfile(self.cfg["load_project_path"].with_suffix('.log'),
                   Path(self.cfg["output_path"],self.run_id+'.log')
                 )
@@ -188,7 +189,7 @@ class MetashapeProcessing:
         self.doc = Metashape.Document()
         self.doc.read_only = False
         
-        if self.cfg["load_project_path"] != "":
+        if self.cfg["load_project_path"]:
             self.doc.open(self.cfg["load_project_path"].resolve().with_suffix('.psx').as_posix())
             self.logger.info(f'Loaded existing project {self.cfg["load_project_path"]}')
         else:
@@ -288,9 +289,9 @@ class MetashapeProcessing:
         
         
         ## Add them
-        if self.cfg["multispectral"]:
-            self.logger.info('Photos (multispectral) added to project.')
+        if self.cfg["addPhotos"]["enabled"] and self.cfg["addPhotos"]["multispectral"]:
             self.doc.chunk.addPhotos(photo_files, layout = Metashape.MultiplaneLayout)
+            self.logger.info('Photos (multispectral) added to project.')
         else:
             self.doc.chunk.addPhotos(photo_files)
             self.logger.info('Photos added to project.')
@@ -299,6 +300,7 @@ class MetashapeProcessing:
         # TODO: Try function below
         if "masks" in self.cfg and self.cfg["masks"]["enabled"]:
             self.logger.warning('Masks are currently a semi-unsupported feature, use with caution...')
+            mask_count = 0
             for cam in self.doc.chunk.cameras:
                 try:
                     self.doc.chunk.importMasks(
@@ -306,9 +308,11 @@ class MetashapeProcessing:
                         cameras = [cam], 
                         source = self.cfg["masks"]["mask_source"]
                         )
-                    self.logger.info(f'Applied mask to camera {cam}')
+                    self.logger.debug(f'Applied mask to camera {cam}')
+                    mask_count += 1
                 except:
                     pass
+            self.logger.info(f'Masks have been applied to {mask_count} cameras.'+self._return_parameters(stage="masks"))
             
         ## Need to change the label on each camera so that it includes the containing folder
         for camera in self.doc.chunk.cameras:
