@@ -4,7 +4,7 @@
 @institution: University Centre in Svalbard, Svalbard
 @year: 2020
 
-The following classes are based on the UC Davis work, which in full
+The following classes are inspired by the UC Davis work, which in full
 is documented here: https://github.com/ucdavis/metashape.
 """
 # Import libraries
