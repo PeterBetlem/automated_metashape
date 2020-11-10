@@ -54,7 +54,7 @@ def _get_camera(chunk, label):
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-oct-25"
+        self.__version__ = "2020-nov-02"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -88,7 +88,7 @@ class MetashapeProcessing:
             self._init_network_processing()
             self.network = True
             self.logger.info('Network mode activated.')
-            self._log_parameters(stage="networkProcessing") 
+            self._return_parameters(stage="networkProcessing") 
         else:
             self.network = False
         
