@@ -54,7 +54,7 @@ def _get_camera(chunk, label):
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-nov-02"
+        self.__version__ = "2020-nov-11"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -246,7 +246,13 @@ class MetashapeProcessing:
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_dense_cloud()
-        
+            
+        if "filterDenseCloud" in self.cfg and self.cfg["filterDenseCloud"]["enabled"]:
+            # TODO: find a nicer way to add subdivide_task to all dicts
+            if self.cfg["subdivide_task"]: 
+                self.cfg["filterDenseClouds"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.filter_dense_cloud()
+            
         if "buildMesh" in self.cfg and self.cfg["buildMesh"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
@@ -550,7 +556,9 @@ class MetashapeProcessing:
         for key, value in self.cfg["buildDenseCloud"].items():
             if key in buildDense_dict:
                 dense_parameters[key] = value 
-                
+        # Point confidence should always be calculated!
+        dense_parameters["point_confidence"] = True    
+        
         classify_dict = [
             "max_angle",
             "max_distance",
@@ -574,9 +582,6 @@ class MetashapeProcessing:
             self._encode_task(task)
             self.logger.info('Depth map and dense cloud tasks added to network batch list.')
             
-            if self.cfg["buildDenseCloud"]["point_confidence"] and self.cfg["buildDenseCloud"]["point_confidence_max"]: 
-                self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Try running it locally.")
-    
             # Classify ground points
             if self.cfg["buildDenseCloud"]["classify"]:
         
@@ -584,7 +589,6 @@ class MetashapeProcessing:
                 task.decode(classify_parameters)
                 self._encode_task(task)
                 self.logger.info('Ground point classification task added to network batch list.')
-                
             
         else:
             self.doc.chunk.buildDepthMaps(**depth_parameters)
@@ -594,12 +598,7 @@ class MetashapeProcessing:
             self.doc.chunk.buildDenseCloud(**dense_parameters)
             self.doc.save()
             self.logger.info('Dense cloud built.')
-            
-            if self.cfg["buildDenseCloud"]["point_confidence"] and self.cfg["buildDenseCloud"]["point_confidence_max"]: 
-                self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["buildDenseCloud"]["point_confidence_max"])
-                self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
-                self.doc.chunk.dense_cloud.resetFilters()
-            
+                       
             if self.cfg["buildDenseCloud"]["classify"]:
                 self.doc.chunk.dense_cloud.classifyGroundPoints(**classify_parameters)
                 self.doc.save()
@@ -607,7 +606,22 @@ class MetashapeProcessing:
                 
         self._return_parameters(stage="buildDenseCloud",log=True)
             
-            
+    def filter_dense_cloud(self):
+        '''
+        Filters the dense cloud. 
+        Currently only supports local processing.
+        Currently only supports point_confidence filtering
+
+        '''
+        if self.cfg["filterDenseCloud"]["point_confidence_max"]:
+            if self.network:
+                self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Parameters ignored. Try running it locally.")
+            else:
+                self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["filterDenseCloud"]["point_confidence_max"])
+                self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
+                self.doc.chunk.dense_cloud.resetFilters()
+                
+                self._return_parameters(stage="filterDenseCloud",log=True)
             
     def build_mesh(self):
         '''
