@@ -5,21 +5,20 @@
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
 # When no project is specified, photos are automatically added to the new project as the first step. When a project is specified, photos are not added because they are assumed to be in the project.
-load_project: ""
+load_project_path: 
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
-photo_path: 
-multispectral: False # Is this a multispectral photo set? If RGB, set to False.
+photo_path: D:\Tom\20200918
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
-output_path: 
+output_path: D:\Tom\20200918\metashape
 
 # Path to save Metashape project file (.psx). Will be created if does not exist
-project_path: 
+project_path: D:\Tom\20200918\metashape
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
-run_name: 
+run_name: Improved_dGPS_model
 
 # CRS EPSG code that project outputs should be in (projection should be in meter units and intended for the project area)
 project_crs: "EPSG::32633" # 32633 is WGS1984 UTM 33N
@@ -30,16 +29,16 @@ subdivide_task: True
 
 # Enable Networking:
 networkProcessing:
-    enabled: True
-    server_ip: HostName # Host Server IP address
+    enabled: False
+    server_ip: # Host Server IP address
     
 #### Detect markers
 detectGCPs:
-    enabled: True 
+    enabled: False 
     aruco_dict: aruco.DICT_6X6_250 # options include: aruco.DICT_6X6_250, aruco.DICT_4X4_50
     corner: "topright" # options: bottomleft (=1), topleft (2), topright (3), bottomright (4), centre (0).
     template:
-        enabled: True # Keep false when using geopackage with long/lat data
+        enabled: False # Keep false when using geopackage with long/lat data
         template_file_path: "../markers/markers_circle.png"
         template_size: 0.20 # one-sided dimension of a mxm square in metres. The example in Markers is a 20x20 cm frame, i.e. 0.20 m here.
     
@@ -55,13 +54,17 @@ extractObject:
 ## Parameter names here should fully follow the parameter names of the Metashape functions.
 ## In case default parameters are to be used, comment out the corresponding parameter with an # (Exception: addGCP parameters!)
 
+addPhotos:
+    enabled: True
+    remove_photo_location_metadata: True #
+    multispectral: False # Is this a multispectral photo set? If RGB, set to False.
+    
 # To use GCPs, a 'gcps' folder must exist in the top level photos folder. The contents of the 'gcps' folder are created by the prep_gcps.R script. See readme: https://github.com/ucdavis/metashape
 addGCPs:
     enabled: True
-    gcp_crs: "EPSG::32633" # CRS EPSG code of GCP coordinates. 32633 (UTM 33 N) is the CRS of the sample RGB photoset.
+    gcp_crs: "EPSG::4326" # CRS EPSG code of GCP coordinates. 32633 (UTM 33 N) is the CRS of the sample RGB photoset.
     marker_location_accuracy: 0.1 # Recommended: 0.1. Accuracy of GCPs real-world coordinates, in meters.
     marker_projection_accuracy: 8 # Recommended: 8. Accuracy of the identified locations of the GCPs within the images, in pixels.
-    optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
 
 calibrateReflectance: # (Metahsape: calibrateReflectance)
     enabled: False
@@ -71,23 +74,25 @@ calibrateReflectance: # (Metahsape: calibrateReflectance)
 
 alignPhotos: # (Metashape: alignPhotos)
     enabled: True
-    downscale: 4 # Recommended: 1. How much to coarsen the photos when searching for tie points. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
+    downscale: 0 # Recommended: 1. How much to coarsen the photos when searching for tie points. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
     mask_tiepoints: True
+    double_alignment: True
     
 masks:
-    enabled: True # Default, only enable if you have images with masks :)
-    mask_path:  # Has to point to dir with masks
+    enabled: False # Default, only enable if you have images with masks :)
+    mask_path: E:\Anna\EK11\100MEDIA # Has to point to dir with masks
     mask_source: Metashape.MaskSourceFile # Default, other options include: [MaskSourceAlpha, MaskSourceFile, MaskSourceBackground, MaskSourceModel]
 
 optimizeCameras: # (Metashape: optimizeCameras) # Remove # to activate :)
     enabled: True
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as optinizing photos?
+    optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
 
 buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPoints, and exportPoints)
     enabled: True
     ## For depth maps (buldDepthMaps)
-    downscale: 4 # Recommended: 4. How much to coarsen the photos when searching for matches to build the dense cloud. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
+    downscale: 2 # Recommended: 4. How much to coarsen the photos when searching for matches to build the dense cloud. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
     filter_mode: Metashape.MildFiltering # Recommended: Metashape.MildFiltering. How to filter the point cloud. Options are NoFiltering, MildFiltering, ModerateFiltering, AggressiveFiltering. Aggressive filtering removes detail and makes worse DEMs (at least for forest). NoFiltering takes very long. In trials, it never completed.
     reuse_depth: False # Recommended: False. Purpose unknown.
     ## For dense cloud (buildDenseCloud)
@@ -103,12 +108,17 @@ buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPo
     export: False # Whether to export dense cloud file.
     format: Metashape.PointsFormatLAS # Recommended: PointsFormatLAS. The file format to export points in.
     classes: "ALL" # Recommended: "ALL". Point classes to export. Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
+    point_confidence: True
+
+filterDenseCloud:
+    enabled:
+    point_confidence_max: 5 # maximum point confidence for points to be removed, ranges from 1-99   
 
 buildMesh: # (Metashape: buildModel)
     enabled: True
     ## For depth maps (buldModel)
     surface_type: Metashape.Arbitrary # Recommended: Metashape.Arbitrary
-    face_count: Metashape.LowFaceCount # Options are [LowFaceCount, MediumFaceCount, HighFaceCount, CustomFaceCount]
+    face_count: Metashape.CustomFaceCount # Options are [LowFaceCount, MediumFaceCount, HighFaceCount, CustomFaceCount]
     face_count_custom: 100000 # Integer, has to be enabled through CustomFaceCount above.
     ## For dense cloud (buildDenseCloud)
     source_data: Metashape.DenseCloudData # Recommended: DenseCloudData. Others include: PointCloudData and ModelData.
