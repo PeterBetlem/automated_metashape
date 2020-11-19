@@ -54,7 +54,7 @@ def _get_camera(chunk, label):
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-nov-11"
+        self.__version__ = "2020-nov-19"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -250,7 +250,7 @@ class MetashapeProcessing:
         if "filterDenseCloud" in self.cfg and self.cfg["filterDenseCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
-                self.cfg["filterDenseClouds"]["subdivide_task"] = self.cfg["subdivide_task"]
+                self.cfg["filterDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.filter_dense_cloud()
             
         if "buildMesh" in self.cfg and self.cfg["buildMesh"]["enabled"]:
