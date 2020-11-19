@@ -5,7 +5,7 @@
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
 # When no project is specified, photos are automatically added to the new project as the first step. When a project is specified, photos are not added because they are assumed to be in the project.
-load_project_path: E:\Deltaneset_photogrammetry\metashape\KonusdalenWestFault_20201113T2104.psx
+load_project_path: E:\Deltaneset_photogrammetry\metashape\KonusdalenWestFault_20201119T1621.psx
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
@@ -112,11 +112,11 @@ buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPo
     classes: "ALL" # Recommended: "ALL". Point classes to export. Must be a list. Or can set to "ALL" to use all points. An example of a specific class is: Metashape.PointClass.Ground
 
 filterDenseCloud: 
-    enabled: True
+    enabled: False
     point_confidence_max: 20 # maximum point confidence for points to be removed, ranges from 1-99
 
 buildMesh: # (Metashape: buildModel)
-    enabled: True
+    enabled: False
     ## For depth maps (buldModel)
     surface_type: Metashape.Arbitrary # Recommended: Metashape.Arbitrary
     face_count: Metashape.HighFaceCount # Options are [LowFaceCount, MediumFaceCount, HighFaceCount, CustomFaceCount]
@@ -126,8 +126,8 @@ buildMesh: # (Metashape: buildModel)
     volumetric_masks: False # Default False; True for volumetric masking during 3D mesh generation, as documented here https://www.agisoft.com/index.php?id=48
 
 buildTexture: # (Metashape: buildTexture)
-    enabled: False
+    enabled: True
     ## For depth maps (buldModel)
     mapping_mode: Metashape.GenericMapping # [LegacyMapping, GenericMapping, OrthophotoMapping, AdaptiveOrthophotoMapping, SphericalMapping, CameraMapping]
     blending_mode: Metashape.MosaicBlending # Recommended: Mosaic. Other options: [AverageBlending, MosaicBlending, MinBlending, MaxBlending, DisabledBlending]
-    texture_size: 8192 # integer, multiple of 4096
+    texture_size: 16384 # integer, multiple of 4096

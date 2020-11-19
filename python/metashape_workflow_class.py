@@ -23,6 +23,8 @@ import numpy as np
 import pandas as pd
 from shutil import copyfile
 
+import keyring, getpass
+
 # import the Metashape functionality
 import Metashape
 
@@ -48,13 +50,54 @@ def _get_camera(chunk, label):
     for camera in chunk.cameras:
         if camera.label.lower() == label.lower():
             return camera
-    return None
+    return None          
 
+def _webhook(service,get=True):
+    '''
+    :param service: Name of the service for which a password has been stored
+    :param username: Username for the service specified above
+    :return: webhook url for the username specified above, if None, prompts the user to specify the password
+    '''
+    if get == True:
+        if keyring.get_password(service, "system") is None:
+            keyring.set_password(service, "system", getpass.getpass())
+        return keyring.get_password(service, "system")
+    else:
+        keyring.set_password(service, "system", getpass.getpass())
+        
+def _msteams_connector(task,**kwargs):
+        try:
+            import pymsteams
+            msteams = pymsteams.connectorcard(_webhook("msteams_metashape_channel"))
+            
+            if task != "aborted" and kwargs["run_id"]:
+                message = f'{task}ed stand-alone processing of Agisoft Metashape runtime-id {kwargs["run_id"]} on terminal {os.environ["COMPUTERNAME"]}.'
+            elif task == "aborted":
+                message = f'Stand-alone processing of Agisoft Metashape on terminal {os.environ["COMPUTERNAME"]} aborted.'
+            
+            msteams.text(message)
+            msteams.send()
+        except:
+            logger.warning("Failed to import/operate pymsteams.")
+            pass
+            
+            
+def _progress_print(p):
+    if not p%20:
+        message = f'Task progress: {p:.2f}%'
+        # if self.myTeamsMessage:
+        #     try:
+        #         self.myTeamsMessage.text(message)
+        #         self.myTeamsMessage.send()
+        #     except:
+        #         pass
+        print(message)
+    
 # Main functions
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-nov-19"
+        self.__version__ = "2020-nov-19d"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -146,6 +189,7 @@ class MetashapeProcessing:
 
         self.logger.info(f'Agisoft Metashape Professional Version: {Metashape.app.version}.')
         self.logger.info(f'Python package version: {self.__version__}.\n')
+        _msteams_connector(task = "Start", run_id = self.run_id)
 
         # open run configuration again. We can't just use the existing cfg file because its objects had already been converted to Metashape objects (they don't write well)
         # with open(self.config_file) as file:
@@ -178,6 +222,7 @@ class MetashapeProcessing:
         self.logger.info('--------------')
         self.logger.info('Run completed.')
         self.logger.info('--------------\n')
+        _msteams_connector(task = "Finish", run_id = self.run_id)
         
     def _check_environment(self):
         if "onedrive" in str(self.cfg["load_project_path"]).lower():
@@ -617,7 +662,7 @@ class MetashapeProcessing:
             if self.network:
                 self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Parameters ignored. Try running it locally.")
             else:
-                self.logger.info("Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']} ")
+                self.logger.info("Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
                 self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["filterDenseCloud"]["point_confidence_max"])
                 self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
                 self.doc.chunk.dense_cloud.resetFilters()
@@ -717,7 +762,7 @@ class MetashapeProcessing:
             self.doc.chunk.buildUV(**uv_parameters)
             self.logger.info('UV map constructed.')
             
-            self.doc.chunk.buildTexture(**texture_parameters)
+            self.doc.chunk.buildTexture(**texture_parameters, progress = _progress_print)
             self.doc.save()
             self.logger.info('Textures constructed.'+self._return_parameters(stage="buildTexture"))
 
@@ -727,9 +772,18 @@ class MetashapeProcessing:
         '''
         
         self.logger.info('Generating tiles for tiled model...')
-                
-        raise
+             
         buildTiles_dict = [
+            "pixel_size",
+            "tile_size",
+            "source_data",
+            "face_count",
+            "ghosting_filter",
+            "transfer_texture",
+            "keep_depth",
+            "classes",
+            "workitem_size_cameras",
+            "max_workgroup_size"
             ]
         
         tile_parameters = {}
@@ -746,6 +800,41 @@ class MetashapeProcessing:
             
         else:            
             self.doc.chunk.buildTexture(**tile_parameters)
+            self.doc.save()
+            self.logger.info('Textures constructed.')
+
+    def build_dem(self):
+        '''
+        Build dem
+        '''
+        
+        self.logger.info('Generating DEM...')
+             
+        buildDEM_dict = [
+            "source_data",
+            "interpolation",
+            "flip_x",
+            "flip_y",
+            "flip_z",
+            "resolution",
+            "workitem_size_tiles",
+            "max_workgroup_size"
+            ]
+        
+        dem_parameters = {}
+        for key, value in self.cfg["buildDEM"].items():
+            if key in buildDEM_dict:
+                dem_parameters[key] = value 
+                
+        if self.network:
+            # build tiled model
+            task = Metashape.Tasks.BuildDEM()
+            task.decode(dem_parameters)
+            self._encode_task(task)
+            self.logger.info('Texture generation task added to network batch list.')
+            
+        else:            
+            self.doc.chunk.buildDEM(**dem_parameters)
             self.doc.save()
             self.logger.info('Textures constructed.')
         
@@ -794,4 +883,6 @@ if __name__ == "__main__":
     try:
         MetashapeProcessing(config_file,logger=logger)
     except:
+        _msteams_connector(task = "abort")
         logger.exception('')
+        
