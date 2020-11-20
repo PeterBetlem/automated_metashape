@@ -97,7 +97,7 @@ def _progress_print(p):
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-nov-19d"
+        self.__version__ = "2020-nov-20"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -309,6 +309,18 @@ class MetashapeProcessing:
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildTexture"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_texture()
+            
+        if "buildTiledModel" in self.cfg and self.cfg["buildTiledModel"]["enabled"]:
+            # TODO: find a nicer way to add subdivide_task to all dicts
+            if self.cfg["subdivide_task"]: 
+                self.cfg["buildTiledModel"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.build_tiled_model()
+            
+        if "buildDEM" in self.cfg and self.cfg["buildDEM"]["enabled"]:
+            # TODO: find a nicer way to add subdivide_task to all dicts
+            if self.cfg["subdivide_task"]: 
+                self.cfg["buildDEM"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.build_dem()
             
         self.export_report()
         
@@ -796,12 +808,12 @@ class MetashapeProcessing:
             task = Metashape.Tasks.BuildTexture()
             task.decode(tile_parameters)
             self._encode_task(task)
-            self.logger.info('Texture generation task added to network batch list.')
+            self.logger.info('Tiled model generation task added to network batch list.')
             
         else:            
             self.doc.chunk.buildTexture(**tile_parameters)
             self.doc.save()
-            self.logger.info('Textures constructed.')
+            self.logger.info('Tiled model constructed.')
 
     def build_dem(self):
         '''
@@ -831,12 +843,12 @@ class MetashapeProcessing:
             task = Metashape.Tasks.BuildDEM()
             task.decode(dem_parameters)
             self._encode_task(task)
-            self.logger.info('Texture generation task added to network batch list.')
+            self.logger.info('DEM generation task added to network batch list.')
             
         else:            
             self.doc.chunk.buildDEM(**dem_parameters)
             self.doc.save()
-            self.logger.info('Textures constructed.')
+            self.logger.info('DEM constructed.')
         
     def export_report(self):
         """

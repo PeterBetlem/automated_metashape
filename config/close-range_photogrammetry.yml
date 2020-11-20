@@ -132,7 +132,7 @@ buildTexture: # (Metashape: buildTexture)
     blending_mode: Metashape.MosaicBlending # Recommended: Mosaic. Other options: [AverageBlending, MosaicBlending, MinBlending, MaxBlending, DisabledBlending]
     texture_size: 16384 # integer, multiple of 4096
 
-buildTexture: # (Metashape: buildTexture)
+buildTiledModel: # (Metashape: buildTexture)
     enabled: True
     ## For depth maps (buldModel)
     source_data: Metashape.DenseCloudData
