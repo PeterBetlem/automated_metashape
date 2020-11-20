@@ -97,7 +97,7 @@ def _progress_print(p):
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-nov-20a"
+        self.__version__ = "2020-nov-20b"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -805,13 +805,13 @@ class MetashapeProcessing:
                 
         if self.network:
             # build tiled model
-            task = Metashape.Tasks.BuildTexture()
+            task = Metashape.Tasks.BuildTiledModel()
             task.decode(tile_parameters)
             self._encode_task(task)
             self.logger.info('Tiled model generation task added to network batch list.')
             
         else:            
-            self.doc.chunk.buildTexture(**tile_parameters)
+            self.doc.chunk.buildTiledModel(**tile_parameters)
             self.doc.save()
             self.logger.info('Tiled model constructed.')
 
