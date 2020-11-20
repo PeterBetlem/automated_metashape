@@ -97,7 +97,7 @@ def _progress_print(p):
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-nov-20"
+        self.__version__ = "2020-nov-20a"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -799,7 +799,7 @@ class MetashapeProcessing:
             ]
         
         tile_parameters = {}
-        for key, value in self.cfg["buildTiles"].items():
+        for key, value in self.cfg["buildTiledModel"].items():
             if key in buildTiles_dict:
                 tile_parameters[key] = value 
                 
@@ -839,7 +839,7 @@ class MetashapeProcessing:
                 dem_parameters[key] = value 
                 
         if self.network:
-            # build tiled model
+            # build dem
             task = Metashape.Tasks.BuildDEM()
             task.decode(dem_parameters)
             self._encode_task(task)
