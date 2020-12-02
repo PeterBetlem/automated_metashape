@@ -82,22 +82,11 @@ def _msteams_connector(task,**kwargs):
             pass
             
             
-def _progress_print(p):
-    if not p%20:
-        message = f'Task progress: {p:.2f}%'
-        # if self.myTeamsMessage:
-        #     try:
-        #         self.myTeamsMessage.text(message)
-        #         self.myTeamsMessage.send()
-        #     except:
-        #         pass
-        print(message)
-    
 # Main functions
 class MetashapeProcessing:
 
     def _about(self):
-        self.__version__ = "2020-nov-20b"
+        self.__version__ = "2020-dec-02"
         self.__author__ = "Peter Betlem"
         self.__institution__ = "The University Centre in Svalbard"
         self.__license__ = "BSD 3-Clause License"
@@ -774,7 +763,7 @@ class MetashapeProcessing:
             self.doc.chunk.buildUV(**uv_parameters)
             self.logger.info('UV map constructed.')
             
-            self.doc.chunk.buildTexture(**texture_parameters, progress = _progress_print)
+            self.doc.chunk.buildTexture(**texture_parameters)
             self.doc.save()
             self.logger.info('Textures constructed.'+self._return_parameters(stage="buildTexture"))
 
@@ -808,12 +797,12 @@ class MetashapeProcessing:
             task = Metashape.Tasks.BuildTiledModel()
             task.decode(tile_parameters)
             self._encode_task(task)
-            self.logger.info('Tiled model generation task added to network batch list.')
+            self.logger.info('Model tiling task added to network batch list.'+self._return_parameters(stage="buildTiledModel"))
             
         else:            
             self.doc.chunk.buildTiledModel(**tile_parameters)
             self.doc.save()
-            self.logger.info('Tiled model constructed.')
+            self.logger.info('Tiled model constructed.'+self._return_parameters(stage="buildTiledModel"))
 
     def build_dem(self):
         '''
@@ -840,15 +829,17 @@ class MetashapeProcessing:
                 
         if self.network:
             # build dem
-            task = Metashape.Tasks.BuildDEM()
+            task = Metashape.Tasks.BuildDem()
             task.decode(dem_parameters)
             self._encode_task(task)
-            self.logger.info('DEM generation task added to network batch list.')
+            self.logger.info('DEM generation task added to network batch list.'+self._return_parameters(stage="buildDEM"))
+
             
         else:            
-            self.doc.chunk.buildDEM(**dem_parameters)
+            self.doc.chunk.buildDem(**dem_parameters)
             self.doc.save()
-            self.logger.info('DEM constructed.')
+            self.logger.info('DEM constructed.'+self._return_parameters(stage="buildDEM"))
+
         
     def export_report(self):
         """
