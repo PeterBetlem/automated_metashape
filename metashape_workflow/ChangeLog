@@ -1,0 +1,40 @@
+CHANGES
+=======
+
+* logging Bugfix
+* Branch to be used for structuring the work into a package
+* bugfix
+* bugfix
+* Bugfix buildTiledModel
+* added buildTexture
+* msteams connector + status updates
+* Update metashape\_workflow\_class.py
+* bugfix
+* Update close-range\_photogrammetry.yml
+* Update metashape\_workflow\_class.py
+* Update metashape\_workflow\_class.py
+* Update metashape\_workflow\_class.py
+* Bugfix
+* bugfix
+* Update metashape\_workflow\_class.py
+* Improved logging of configuration file per section
+* Update metashape\_workflow\_class.py
+* Update identify\_markers.py
+* Improved logging
+* logging improvements
+* Updated to disable camera coordinates when only using ground control points
+* Update README.md
+* added point confidence
+* added\_tile\_features
+* Bugfixes
+* Various bugfixes/masks
+* Bugfixes + combined Jupyter notebook workflow
+* Added metashape workflow class
+* bugfix
+* bugfix
+* Imported marker identification scripts from metashape hub
+* Rewrite
+* improved with backing up of original media folder
+* Object extractor script finalised
+* Update LICENSE
+* Initial commit

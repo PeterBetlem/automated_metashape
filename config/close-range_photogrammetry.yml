@@ -5,17 +5,17 @@
 # Project to load. If not a blank string, this will open an existing project at the path specified. If a blank string, creates a new empty project.
 # Even if opening an existing project, all processing on it is saved as a new project (path and name specified below). The original project file is not modified.
 # When no project is specified, photos are automatically added to the new project as the first step. When a project is specified, photos are not added because they are assumed to be in the project.
-load_project_path: E:\Deltaneset_photogrammetry\metashape\KonusdalenWestFault_20201119T2342.psx
+load_project_path: D:\Metashape\Deltaneset\metashape\KonusdalenWestFault_20201120T1326.psx
 
 # The path to the directory of flight photos
 # If there are multiple photo folders, set path to the folder that contains all the photo folders
-photo_path: E:\Deltaneset_photogrammetry
+photo_path: D:\Metashape\Deltaneset
 
 # Path for exports (e.g., points, DSM, orthomosaic) and processing log. Will be created if does not exist.
-output_path: E:\Deltaneset_photogrammetry\metashape
+output_path: D:\Metashape\Deltaneset\metashape
 
 # Path to save Metashape project file (.psx). Will be created if does not exist
-project_path: E:\Deltaneset_photogrammetry\metashape
+project_path: D:\Metashape\Deltaneset\metashape
 
 # The identifier for the run. Will be used in naming output files. Recommended to include a photoset name and processing parameter set name.
 run_name: KonusdalenWestFault
@@ -133,9 +133,15 @@ buildTexture: # (Metashape: buildTexture)
     texture_size: 16384 # integer, multiple of 4096
 
 buildTiledModel: # (Metashape: buildTexture)
-    enabled: True
+    enabled: False
     ## For depth maps (buldModel)
     source_data: Metashape.DenseCloudData
     pixel_size: 0.010
     tile_size: 128
     face_count: 4000
+    
+buildDEM: # (Metashape: buildTexture)
+    enabled: True
+    source_data: Metashape.DenseCloudData
+    resolution: 0.01
+    projection: "EPSG::32633"
