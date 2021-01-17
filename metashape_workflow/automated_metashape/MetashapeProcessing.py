@@ -364,6 +364,43 @@ class AutomatedProcessing:
     
         self.doc.save()
         self.logger.info('Finalised adding photos.'+self._return_parameters(stage="addPhotos"))
+
+    
+    def analyze_photos(self):
+        analyzePhotos_dict = [
+            "cameras",
+            "filter_mask"
+            ]
+        analyzePhotos_parameters = []
+        for key, value in self.cfg["analyzePhotos"].items():
+            if key in analyzePhotos_dict:
+                analyzePhotos_parameters[key] = value 
+                
+        if self.network:            
+            self.logger.warning("Current version do not support photo selection based on photo quality - use standalone instead.")
+            task = Metashape.Tasks.AnalyzePhotos()
+            task.decode(analyzePhotos_parameters)
+            self._encode_task(task)
+            self.logger.info('Photo-analysis tasks added to network batch list.'+self._return_parameters(stage="analyzePhotos"))
+
+        else:
+            self.doc.chunk.analyzePhotos(**analyzePhotos_parameters
+                )
+            self.logger.info('Photos analyzed.')
+            
+            if "quality_cutoff" in self.cfg["analyzePhotos"]:
+                self.logger.info(f"Disabling all photos with quality values less than {self.cfg['analyzePhotos']['quality_cutoff']}.")
+            else:
+                self.cfg["analyzePhotos"]["quality_cutoff"] = 0.5
+                self.logger.info(f"Disabling all photos with quality values less than 0.5 (recommended by Agisoft).")
+            
+            if not "cameras" in analyzePhotos_parameters:
+                analyzePhotos_parameters["cameras"] = self.doc.chunk.cameras
+                
+            for camera in analyzePhotos_parameters["cameras"]:
+                if float(camera.meta['Image/Quality']) < self.cfg["analyzePhotos"]["quality_cutoff"]:
+                    camera.enabled = False
+                    self.logger.debug(f'Disabled camera {camera}')
         
     def detect_gcps(self):
         '''
@@ -430,43 +467,6 @@ class AutomatedProcessing:
         self.logger.info('Ground control points added.'+self._return_parameters(stage="addGCPs"))
    
         return True
-    
-    def analyze_photos(self):
-        analyzePhotos_dict = [
-            "cameras",
-            "filter_mask"
-            ]
-        analyzePhotos_parameters = []
-        for key, value in self.cfg["analyzePhotos"].items():
-            if key in analyzePhotos_dict:
-                analyzePhotos_parameters[key] = value 
-                
-        if self.network:            
-            self.logger.warning("Current version do not support photo selection based on photo quality - use standalone instead.")
-            task = Metashape.Tasks.AnalyzePhotos()
-            task.decode(analyzePhotos_parameters)
-            self._encode_task(task)
-            self.logger.info('Photo-analysis tasks added to network batch list.'+self._return_parameters(stage="analyzePhotos"))
-
-        else:
-            self.doc.chunk.analyzePhotos(**analyzePhotos_parameters
-                )
-            self.logger.info('Photos analyzed.')
-            
-            if "quality_cutoff" in self.cfg["analyzePhotos"]:
-                self.logger.info(f"Disabling all photos with quality values less than {self.cfg['analyzePhotos']['quality_cutoff']}.")
-            else:
-                self.logger.info(f"Disabling all photos with quality values less than 0.5 (recommended by Agisoft).")
-            
-            if not "cameras" in analyzePhotos_parameters:
-                analyzePhotos_parameters[cameras] = self.doc.chunk.cameras
-                
-            for camera in analyzePhotos_parameters[cameras]:
-                if float(camera.meta['Image/Quality']) < 0.5:
-                    camera.reference.enabled = False
-                    self.logger.debug(f'Disabled camera {camera}')
-            
-        
         
     def align_photos(self):
         """
