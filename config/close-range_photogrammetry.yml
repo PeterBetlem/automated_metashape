@@ -83,8 +83,8 @@ alignPhotos: # (Metashape: alignPhotos)
     
 masks:
     enabled: False # Default, only enable if you have images with masks :)
-    mask_path: E:\Anna\EK11\100MEDIA # Has to point to dir with masks
-    mask_source: Metashape.MaskSourceFile # Default, other options include: [MaskSourceAlpha, MaskSourceFile, MaskSourceBackground, MaskSourceModel]
+    path: E:\Anna\EK11\100MEDIA\{filename}_mask.JPG # Has to point to dir with masks
+    masking_mode: Metashape.MaskModeFile # Default, other options include: Masking mode in [MaskingModeAlpha, MaskingModeFile, MaskingModeBackground, MaskingModeModel]
 
 optimizeCameras: # (Metashape: optimizeCameras) # Remove # to activate :)
     enabled: False
