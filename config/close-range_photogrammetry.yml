@@ -55,30 +55,33 @@ extractObject:
 ## In case default parameters are to be used, comment out the corresponding parameter with an # (Exception: addGCP parameters!)
 
 addPhotos:
-    enabled: False
-    remove_photo_location_metadata: True #
+    enabled: True
+    remove_photo_location_metadata: False # Removes photo location metadata
     multispectral: False # Is this a multispectral photo set? If RGB, set to False.
     
 # To use GCPs, a 'gcps' folder must exist in the top level photos folder. The contents of the 'gcps' folder are created by the prep_gcps.R script. See readme: https://github.com/ucdavis/metashape
 addGCPs:
-    enabled: False
-    gcp_crs: "EPSG::4326" # CRS EPSG code of GCP coordinates. 32633 (UTM 33 N) is the CRS of the sample RGB photoset.
+    enabled: True
+    gcp_crs: "EPSG::4326" # CRS EPSG code of GCP coordinates. 32633 (UTM 33 N) is the CRS of the sample RGB photoset. 4326 (GPS) is the standard for GPS coordinates.
     marker_location_accuracy: 0.1 # Recommended: 0.1. Accuracy of GCPs real-world coordinates, in meters.
     marker_projection_accuracy: 8 # Recommended: 8. Accuracy of the identified locations of the GCPs within the images, in pixels.
     optimize_w_gcps_only: True # Optimize alignment using GCPs only: required for GCP locations to take precedence over photo GPS data. Disabling it makes GCPs essentially irrelevant.
-
 
 calibrateReflectance: # (Metahsape: calibrateReflectance)
     enabled: False
     panel_filename: "RP04-1923118-OB.csv" # The calibration file must be in the "calibration" folder in the top-level project photos directory. See example panel calibration file in the calibration directory of project repo.
     use_reflectance_panels: True
     use_sun_sensor: True
+    
+analyzePhotos:
+    enabled: True
+    quality_cutoff:  # value between 0 and 1, indicates the lowest quality unit at which photos are used for processing
 
 alignPhotos: # (Metashape: alignPhotos)
-    enabled: False
-    downscale: 0 # Recommended: 1. How much to coarsen the photos when searching for tie points. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
+    enabled: True
+    downscale: 0 # Recommended: 0. How much to coarsen the photos when searching for tie points. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as aligning photos?
-    mask_tiepoints: True
+    filter_mask_tiepoints: True
     double_alignment: True
     
 masks:
@@ -87,14 +90,14 @@ masks:
     masking_mode: Metashape.MaskModeFile # Default, other options include: Masking mode in [MaskingModeAlpha, MaskingModeFile, MaskingModeBackground, MaskingModeModel]
 
 optimizeCameras: # (Metashape: optimizeCameras) # Remove # to activate :)
-    enabled: False
+    enabled: True
     adaptive_fitting: True # Recommended: True. Should the camera lens model be fit at the same time as optinizing photos?
     tiepoint_covariance: True
 
 buildDenseCloud: # (Metashape: buildDepthMaps, buildDenseCloud, classifyGroundPoints, and exportPoints)
     enabled: False
     ## For depth maps (buldDepthMaps)
-    downscale: 2 # Recommended: 4. How much to coarsen the photos when searching for matches to build the dense cloud. Corresponding settings in Metashape: 0: Highest, 1: High, 2: Medium, 3: Low, 4: Lowest
+    downscale: 2 # Recommended: 2. How much to coarsen the photos when searching for matches to build the dense cloud. Corresponding settings in Metashape: 1: Highest, 2: High, 3: Medium, 4: Low, 5: Lowest
     filter_mode: Metashape.MildFiltering # Recommended: Metashape.MildFiltering. How to filter the point cloud. Options are NoFiltering, MildFiltering, ModerateFiltering, AggressiveFiltering. Aggressive filtering removes detail and makes worse DEMs (at least for forest). NoFiltering takes very long. In trials, it never completed.
     reuse_depth: False # Recommended: False. Purpose unknown.
     ## For dense cloud (buildDenseCloud)
@@ -145,3 +148,16 @@ buildDEM: # (Metashape: buildTexture)
     source_data: Metashape.DenseCloudData
     resolution: 0.01
     projection: "EPSG::32633"
+    
+publishData:
+    enabled: True
+    service:  # Service type in [ServiceSketchfab, ServiceMapbox, Service4DMapper, ServiceSputnik, ServicePointscene, ServiceMelown, ServicePointbox, ServicePicterra]
+    source: # Data source in [PointCloudData, DenseCloudData, DepthMapsData, ModelData, TiledModelData, ElevationData, OrthomosaicData, ImagesData]
+    with_camera_track:  # True/False If model should be uploaded with camera track. Can be used only with DataSource.ModelData.
+    export_point_colors:  # True/False If Point Cloud should be uploaded with point colors.
+    title:  # Title of uploading model.
+    description:  # Description of uploading model.
+    token:  # Token used to upload data.
+    is_draft:  # If model should be uploaded as draft.
+    is_private:  # True/False If model should have private access.
+    password:  # Password to access model if uploaded as private.

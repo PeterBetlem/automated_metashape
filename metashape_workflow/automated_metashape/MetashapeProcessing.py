@@ -265,7 +265,7 @@ class AutomatedProcessing:
         if self.network:
             self._network_submit_batch()
             
-        if "publish" in self.cfg and self.cfg["publish"]["enabled"]:
+        if "publishData" in self.cfg and self.cfg["publishData"]["enabled"]:
             self.publish_data()
             
         del self.doc
@@ -452,6 +452,20 @@ class AutomatedProcessing:
             self.doc.chunk.analyzePhotos(**analyzePhotos_parameters
                 )
             self.logger.info('Photos analyzed.')
+            
+            if "quality_cutoff" in self.cfg["analyzePhotos"]:
+                self.logger.info(f"Disabling all photos with quality values less than {self.cfg['analyzePhotos']['quality_cutoff']}.")
+            else:
+                self.logger.info(f"Disabling all photos with quality values less than 0.5 (recommended by Agisoft).")
+            
+            if not "cameras" in analyzePhotos_parameters:
+                analyzePhotos_parameters[cameras] = self.doc.chunk.cameras
+                
+            for camera in analyzePhotos_parameters[cameras]:
+                if float(camera.meta['Image/Quality']) < 0.5:
+                    camera.reference.enabled = False
+                    self.logger.debug(f'Disabled camera {camera}')
+            
         
         
     def align_photos(self):
@@ -889,7 +903,7 @@ class AutomatedProcessing:
             ]
         
         publish_parameters = {}
-        for key, value in self.cfg["publish"].items():
+        for key, value in self.cfg["publishData"].items():
             if key in publish_dict:
                 publish_parameters[key] = value 
         
@@ -899,6 +913,7 @@ class AutomatedProcessing:
         else:
             
             self.doc.chunk.publishData(**publish_parameters)
+            self.logger.info('Data published.'+self._return_parameters(stage="publishData"))
         
         
     def export_report(self):
