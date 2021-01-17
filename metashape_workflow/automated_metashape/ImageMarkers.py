@@ -187,7 +187,7 @@ class real_world_positions():
         _check_output_path(self.cfg["photo_path"])
         
         # automatically run either of two functions based on YML file
-        if self.cfg["detectGCPs"]["template"]["enabled"]:
+        if "template" in self.cfg["detectGCPs"] and self.cfg["detectGCPs"]["template"]["enabled"]:
             self.logger.info("Implementing real world positions from 2D template file.")
             self.real_world_positions_from_2D_template()
         else:

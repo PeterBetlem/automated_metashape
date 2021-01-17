@@ -7,7 +7,8 @@ try:
 except ModuleNotFoundError as e:
     print(e)
     print("Unable to import Metashape functions." + \
-          "Please see readme for instructions.")
+          "Please see readme for instructions." + \
+          "This limits scrips capabilities to marker-functions only...")
 
 import pkg_resources
 import distutils.dist

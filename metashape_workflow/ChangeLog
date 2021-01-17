@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+v0.1.0
+------
+
+* Created a Package
 * logging Bugfix
 * Branch to be used for structuring the work into a package
 * bugfix
