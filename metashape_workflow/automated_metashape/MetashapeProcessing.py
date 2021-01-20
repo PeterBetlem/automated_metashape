@@ -174,7 +174,6 @@ class AutomatedProcessing:
             self.logger.info(f'Creating new project {self.cfg["load_project_path"]}')
             self.chunk = self.doc.addChunk()
             self.chunk.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
-            self.chunk.marker_crs = Metashape.CoordinateSystem(self.cfg["addGCPs"]["gcp_crs"])
         
         # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
         self.doc.save(str(self.project_file))
@@ -420,6 +419,8 @@ class AutomatedProcessing:
         Alternatively, see the https://github.com/PeterBetlem/image_processing repo for automated Python processing based on aruco markers and OpenCV
         '''
         
+        self.chunk.marker_crs = Metashape.CoordinateSystem(self.cfg["addGCPs"]["gcp_crs"])
+
         self.logger.info('Adding ground control points.')
         ## Tag specific pixels in specific images where GCPs are located
         path = Path(self.cfg["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv")

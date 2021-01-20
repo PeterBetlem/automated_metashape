@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+* Bugfix of quality\_cutoff in analyze photos
+* Update close-range\_photogrammetry.yml
+* fixed quality selection based on image quality analysis
+* Delete Untitled.ipynb
+* added image analysis and updated dicts based on v1.7 reference, including publish
+* bugfix in gcps
+* Update README.md
+
 v0.1.0
 ------
 
