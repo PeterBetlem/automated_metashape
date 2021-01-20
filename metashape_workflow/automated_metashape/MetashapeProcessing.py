@@ -162,7 +162,6 @@ class AutomatedProcessing:
             self.logger.error("Detected OneDrive folder for project - background fileupdating causes instability. Terminating...")
             raise
         
-  
     def _init_metashape_document(self):
         self.doc = Metashape.Document()
         self.doc.read_only = False
@@ -175,7 +174,6 @@ class AutomatedProcessing:
             self.logger.info(f'Creating new project {self.cfg["load_project_path"]}')
             self.chunk = self.doc.addChunk()
             self.chunk.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
-            self.chunk.marker_crs = Metashape.CoordinateSystem(self.cfg["addGCPs"]["gcp_crs"])
         
         # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
         self.doc.save(str(self.project_file))
@@ -200,6 +198,9 @@ class AutomatedProcessing:
         
         if "addPhotos" in self.cfg and self.cfg["addPhotos"]["enabled"]:
             self.add_photos()
+            
+        if "analyzePhotos" in self.cfg and self.cfg["analyzePhotos"]["enabled"]:
+            self.analyze_photos()
             
         if "detectGCPs" in self.cfg and self.cfg["detectGCPs"]["enabled"]:
             self.detect_gcps()
@@ -263,6 +264,9 @@ class AutomatedProcessing:
         if self.network:
             self._network_submit_batch()
             
+        if "publishData" in self.cfg and self.cfg["publishData"]["enabled"]:
+            self.publish_data()
+            
         del self.doc
             
     def _encode_task(self, task):
@@ -299,18 +303,46 @@ class AutomatedProcessing:
         # TODO: Try function below
         if "masks" in self.cfg and self.cfg["masks"]["enabled"]:
             self.logger.warning('Masks are currently a semi-unsupported feature, use with caution...')
-            mask_count = 0
-            for cam in self.doc.chunk.cameras:
-                try:
-                    self.doc.chunk.importMasks(
-                        path = str(Path(self.cfg["masks"]["mask_path"],'{filename}_mask.JPG')),
-                        cameras = [cam], 
-                        source = self.cfg["masks"]["mask_source"]
-                        )
-                    self.logger.debug(f'Applied mask to camera {cam}')
-                    mask_count += 1
-                except:
-                    pass
+            
+            mask_dict = [
+            "path",
+            "masking_mode",
+	    "mask_operation",
+            "tolerance",
+            "cameras",
+            "mask_defocus",
+            "fix_coverage",
+            "keypoint_limit",
+            "blur_threshold",
+            "mask_tiepoints",
+            ]
+            
+            mask_parameters = {}
+            for key, value in self.cfg["masks"].items():
+                if key in mask_dict:
+                    mask_parameters[key] = value 
+            
+            mask_parameters["path"] = str(mask_parameters["path"].resolve())
+
+            if not "cameras" in mask_parameters.keys():
+                mask_count = 0
+                for cam in self.doc.chunk.cameras:
+                    mask_parameters["cameras"] = [cam]
+                    try:
+                        self.doc.chunk.generateMasks(
+                            **mask_parameters
+                            )
+                        self.logger.debug(f'Applied mask to camera {cam}')
+                        mask_count += 1
+                    except:
+                        pass
+            else:
+                mask_count = len(mask_parameters["cameras"])
+                self.doc.chunk.generateMasks(
+                            **mask_parameters
+                            )
+                
+                
             self.logger.info(f'Masks have been applied to {mask_count} cameras.'+self._return_parameters(stage="masks"))
             
         ## Need to change the label on each camera so that it includes the containing folder
@@ -332,10 +364,46 @@ class AutomatedProcessing:
     
         self.doc.save()
         self.logger.info('Finalised adding photos.'+self._return_parameters(stage="addPhotos"))
+
+    
+    def analyze_photos(self):
+        analyzePhotos_dict = [
+            "cameras",
+            "filter_mask"
+            ]
+        analyzePhotos_parameters = []
+        for key, value in self.cfg["analyzePhotos"].items():
+            if key in analyzePhotos_dict:
+                analyzePhotos_parameters[key] = value 
+                
+        if self.network:            
+            self.logger.warning("Current version do not support photo selection based on photo quality - use standalone instead.")
+            task = Metashape.Tasks.AnalyzePhotos()
+            task.decode(analyzePhotos_parameters)
+            self._encode_task(task)
+            self.logger.info('Photo-analysis tasks added to network batch list.'+self._return_parameters(stage="analyzePhotos"))
+
+        else:
+            self.doc.chunk.analyzePhotos()
+            self.logger.info('Photos analyzed.')
+            
+            if "quality_cutoff" in self.cfg["analyzePhotos"]:
+                self.logger.info(f"Disabling all photos with quality values less than {self.cfg['analyzePhotos']['quality_cutoff']}.")
+            else:
+                self.cfg["analyzePhotos"]["quality_cutoff"] = 0.5
+                self.logger.info(f"Disabling all photos with quality values less than 0.5 (recommended by Agisoft).")
+            
+            #if not "cameras" in analyzePhotos_parameters:
+            #    analyzePhotos_parameters["cameras"] = self.doc.chunk.cameras
+                
+            for camera in self.doc.chunk.cameras:
+                if float(camera.meta['Image/Quality']) < self.cfg["analyzePhotos"]["quality_cutoff"]:
+                    camera.enabled = False
+                    self.logger.debug(f'Disabled camera {camera}')
         
     def detect_gcps(self):
         '''
-        Detects aruco markers and stores there in a csv file.
+        Detects aruco markers and stores these in a csv file.
         Currently only aruco markers are supported; though may in future be expended
         to include Agisoft metashape markers.
 
@@ -351,6 +419,8 @@ class AutomatedProcessing:
         Alternatively, see the https://github.com/PeterBetlem/image_processing repo for automated Python processing based on aruco markers and OpenCV
         '''
         
+        self.chunk.marker_crs = Metashape.CoordinateSystem(self.cfg["addGCPs"]["gcp_crs"])
+
         self.logger.info('Adding ground control points.')
         ## Tag specific pixels in specific images where GCPs are located
         path = Path(self.cfg["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv")
@@ -408,21 +478,26 @@ class AutomatedProcessing:
         self.logger.info('Aligning photos...')
         matchPhotos_dict = [
             "downscale",
-            "filter_mask",
             "generic_preselection",
-            "guided_matching",
-            "keep_keypoints",
-            "keypoint_limit",
-            "mask_tiepoints",
             "reference_preselection",
             "reference_preselection_mode",
+            "filter_mask",
+            "mask_tiepoints",
+            "filter_stationary_points",
+            "keypoint_limit",
+            "tiepoint_limit",
+            "keep_keypoints",
+            "guided_matching",
             "reset_matches",
             "subdivide_task",
-            "tiepoint_limit",
+            "workitem_size_cameras",
+            "workitem_size_pairs",
+            "max_workgroup_size"
             ]
         alignCameras_dict = [
-            "adaptive_fitting",
+            "cameras",
             "min_image",
+            "adaptive_fitting",
             "reset_alignment",
             "subdivide_task",
             ]
@@ -507,7 +582,7 @@ class AutomatedProcessing:
                 optimize_parameters[key] = value 
         
         # Disable camera locations as reference if specified in YML
-        if self.cfg["addGCPs"]["enabled"] and self.cfg["addGCPs"]["optimize_w_gcps_only"]:
+        if "addGCPs" in self.cfg and self.cfg["addGCPs"]["enabled"] and self.cfg["addGCPs"]["optimize_w_gcps_only"]:
             self.logger.info('GCP-only optimisation enabled.')
             for camera in self.doc.chunk.cameras:
                 camera.reference.enabled = False
@@ -534,6 +609,7 @@ class AutomatedProcessing:
         buildDepth_dict = [
             "downscale",
             "filter_mode",
+            "cameras",
             "reuse_depth",
             "max_neighbors",
             "subdivide_task",
@@ -567,6 +643,7 @@ class AutomatedProcessing:
             "max_angle",
             "max_distance",
             "cell_size",
+            "source",
             ]
         
         classify_parameters = {}
@@ -621,7 +698,7 @@ class AutomatedProcessing:
             if self.network:
                 self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Parameters ignored. Try running it locally.")
             else:
-                self.logger.info("Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
+                self.logger.info(f"Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
                 self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["filterDenseCloud"]["point_confidence_max"])
                 self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
                 self.doc.chunk.dense_cloud.resetFilters()
@@ -648,6 +725,7 @@ class AutomatedProcessing:
             "metric_masks",
             "keep_depth",
             "trimming_radius",
+            "subdivide_task",
             "workitem_size_cameras",
             "max_workgroup_size",
             ]
@@ -682,6 +760,7 @@ class AutomatedProcessing:
             "mapping_mode",
             "page_count",
             "adaptive_resolution",
+            "cameras"
             ]
         
         uv_parameters = {}
@@ -695,6 +774,7 @@ class AutomatedProcessing:
             "fill_holes",
             "ghosting_filter",
             "texture_type",
+            "transfer_texture"
             ]
         
         texture_parameters = {}
@@ -741,6 +821,7 @@ class AutomatedProcessing:
             "transfer_texture",
             "keep_depth",
             "classes",
+            "subdivide_task",
             "workitem_size_cameras",
             "max_workgroup_size"
             ]
@@ -772,10 +853,14 @@ class AutomatedProcessing:
         buildDEM_dict = [
             "source_data",
             "interpolation",
+            "projection",
+            "region",
+            "classes",
             "flip_x",
             "flip_y",
             "flip_z",
             "resolution",
+            "subdivide_task",
             "workitem_size_tiles",
             "max_workgroup_size"
             ]
@@ -798,6 +883,39 @@ class AutomatedProcessing:
             self.doc.save()
             self.logger.info('DEM constructed.'+self._return_parameters(stage="buildDEM"))
 
+    def publish_data(self):
+        """
+        Function to automatically upload data to a service
+
+        """
+        self.logger.info('Publishing data...')
+             
+        publish_dict = [
+            "service",
+            "source",
+            "with_camera_track",
+            "export_point_colors",
+            "title",
+            "description",
+            "token",
+            "is_draft",
+            "is_private",
+            "password"
+            ]
+        
+        publish_parameters = {}
+        for key, value in self.cfg["publishData"].items():
+            if key in publish_dict:
+                publish_parameters[key] = value 
+        
+        if self.network:
+            self.logger.error("Metashape does currently not support publishing in network mode." + \
+                              "Init stanalone processing instead...")
+        else:
+            
+            self.doc.chunk.publishData(**publish_parameters)
+            self.logger.info('Data published.'+self._return_parameters(stage="publishData"))
+        
         
     def export_report(self):
         """

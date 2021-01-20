@@ -1,6 +1,25 @@
 CHANGES
 =======
 
+* bugfix with analyze\_photos
+* logging bugfix
+* masks\_functional
+* bugfix
+* bugfix
+* bugfix mask path
+* bugfix in masks
+* mask bugfix
+* bugfix
+* bugfix
+* gcp\_crs bugfix
+* Bugfix of quality\_cutoff in analyze photos
+* Update close-range\_photogrammetry.yml
+* fixed quality selection based on image quality analysis
+* Delete Untitled.ipynb
+* added image analysis and updated dicts based on v1.7 reference, including publish
+* bugfix in gcps
+* Update README.md
+
 v0.1.0
 ------
 

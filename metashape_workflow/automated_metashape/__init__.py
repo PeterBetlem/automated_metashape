@@ -10,6 +10,11 @@ except ModuleNotFoundError as e:
           "Please see readme for instructions." + \
           "This limits scrips capabilities to marker-functions only...")
 
+if Metashape.app.version in ['1.7']:
+    raise ValueError(f"Automated_metashape requires Agisoft Metashape v1.7.x. Version Metashape.app.version installed on system.")
+    
+    
+
 import pkg_resources
 import distutils.dist
 import io
