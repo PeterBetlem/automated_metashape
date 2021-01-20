@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* bugfix with analyze\_photos
+* logging bugfix
 * masks\_functional
 * bugfix
 * bugfix
