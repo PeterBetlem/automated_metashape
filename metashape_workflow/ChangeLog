@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+v0.1.1
+------
+
+* Both analysis and additional features successfully implemented. Still a bug in Uploading models
 * bugfix with analyze\_photos
 * logging bugfix
 * masks\_functional
