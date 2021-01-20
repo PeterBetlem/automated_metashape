@@ -323,9 +323,7 @@ class AutomatedProcessing:
                     mask_parameters[key] = value 
             
             mask_parameters["path"] = str(mask_parameters["path"].resolve())
-           # self.doc.chunk.generateMasks(
-           #                 **mask_parameters
-           #                 )
+
             if not "cameras" in mask_parameters.keys():
                 mask_count = 0
                 for cam in self.doc.chunk.cameras:
@@ -345,7 +343,7 @@ class AutomatedProcessing:
                             )
                 
                 
-            self.logger.info(f'Masks have been applied to cameras.'+self._return_parameters(stage="masks"))
+            self.logger.info(f'Masks have been applied to {mask_count} cameras.'+self._return_parameters(stage="masks"))
             
         ## Need to change the label on each camera so that it includes the containing folder
         for camera in self.doc.chunk.cameras:
