@@ -323,26 +323,26 @@ class AutomatedProcessing:
                     mask_parameters[key] = value 
             
             mask_parameters["path"] = str(mask_parameters["path"].resolve())
-            self.doc.chunk.generateMasks(
+           # self.doc.chunk.generateMasks(
+           #                 **mask_parameters
+           #                 )
+            if not "cameras" in mask_parameters.keys():
+                mask_count = 0
+                for cam in self.doc.chunk.cameras:
+                    mask_parameters["cameras"] = [cam]
+                    try:
+                        self.doc.chunk.generateMasks(
                             **mask_parameters
                             )
-           # if not "cameras" in mask_parameters.keys():
-            #    mask_count = 0
-             #   for cam in self.doc.chunk.cameras:
-              #      mask_parameters["cameras"] = [cam]
-               #     try:
-                #        self.doc.chunk.generateMasks(
-                 #           **mask_parameters
-                  #          )
-                   #     self.logger.debug(f'Applied mask to camera {cam}')
-                    #    mask_count += 1
-            #        except:
-             #           pass
-            #else:
-             #   mask_count = len(mask_parameters["cameras"])
-              #  self.doc.chunk.generateMasks(
-               #             **mask_parameters
-                #            )
+                        self.logger.debug(f'Applied mask to camera {cam}')
+                        mask_count += 1
+                    except:
+                        pass
+            else:
+                mask_count = len(mask_parameters["cameras"])
+                self.doc.chunk.generateMasks(
+                            **mask_parameters
+                            )
                 
                 
             self.logger.info(f'Masks have been applied to cameras.'+self._return_parameters(stage="masks"))
