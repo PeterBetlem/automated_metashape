@@ -582,7 +582,7 @@ class AutomatedProcessing:
                 optimize_parameters[key] = value 
         
         # Disable camera locations as reference if specified in YML
-        if self.cfg["addGCPs"]["enabled"] and self.cfg["addGCPs"]["optimize_w_gcps_only"]:
+        if "addGCPs" in self.cfg and self.cfg["addGCPs"]["enabled"] and self.cfg["addGCPs"]["optimize_w_gcps_only"]:
             self.logger.info('GCP-only optimisation enabled.')
             for camera in self.doc.chunk.cameras:
                 camera.reference.enabled = False
