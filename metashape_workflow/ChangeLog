@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* mask bugfix
 * bugfix
 * bugfix
 * gcp\_crs bugfix

@@ -323,26 +323,29 @@ class AutomatedProcessing:
             
             
             
-            if not "cameras" in mask_parameters.keys():
-                mask_count = 0
-                for cam in self.doc.chunk.cameras:
-                    mask_parameters["cameras"] = [cam]
-                    try:
-                        self.doc.chunk.generateMasks(
+            self.doc.chunk.generateMasks(
                             **mask_parameters
                             )
-                        self.logger.debug(f'Applied mask to camera {cam}')
-                        mask_count += 1
-                    except:
-                        pass
-            else:
-                mask_count = len(mask_parameters["cameras"])
-                self.doc.chunk.generateMasks(
-                            **mask_parameters
-                            )
+           # if not "cameras" in mask_parameters.keys():
+            #    mask_count = 0
+             #   for cam in self.doc.chunk.cameras:
+              #      mask_parameters["cameras"] = [cam]
+               #     try:
+                #        self.doc.chunk.generateMasks(
+                 #           **mask_parameters
+                  #          )
+                   #     self.logger.debug(f'Applied mask to camera {cam}')
+                    #    mask_count += 1
+            #        except:
+             #           pass
+            #else:
+             #   mask_count = len(mask_parameters["cameras"])
+              #  self.doc.chunk.generateMasks(
+               #             **mask_parameters
+                #            )
                 
                 
-            self.logger.info(f'Masks have been applied to {mask_count} cameras.'+self._return_parameters(stage="masks"))
+            self.logger.info(f'Masks have been applied to cameras.'+self._return_parameters(stage="masks"))
             
         ## Need to change the label on each camera so that it includes the containing folder
         for camera in self.doc.chunk.cameras:
@@ -383,8 +386,7 @@ class AutomatedProcessing:
             self.logger.info('Photo-analysis tasks added to network batch list.'+self._return_parameters(stage="analyzePhotos"))
 
         else:
-            self.doc.chunk.analyzePhotos(**analyzePhotos_parameters
-                )
+            self.doc.chunk.analyzePhotos()
             self.logger.info('Photos analyzed.')
             
             if "quality_cutoff" in self.cfg["analyzePhotos"]:
