@@ -393,17 +393,17 @@ class AutomatedProcessing:
                 self.cfg["analyzePhotos"]["quality_cutoff"] = 0.5
                 self.logger.info(f"Disabling all photos with quality values less than 0.5 (recommended by Agisoft).")
             
-            if not "cameras" in analyzePhotos_parameters:
-                analyzePhotos_parameters["cameras"] = self.doc.chunk.cameras
+            #if not "cameras" in analyzePhotos_parameters:
+            #    analyzePhotos_parameters["cameras"] = self.doc.chunk.cameras
                 
-            for camera in analyzePhotos_parameters["cameras"]:
+            for camera in self.doc.chunk.cameras:
                 if float(camera.meta['Image/Quality']) < self.cfg["analyzePhotos"]["quality_cutoff"]:
                     camera.enabled = False
                     self.logger.debug(f'Disabled camera {camera}')
         
     def detect_gcps(self):
         '''
-        Detects aruco markers and stores there in a csv file.
+        Detects aruco markers and stores these in a csv file.
         Currently only aruco markers are supported; though may in future be expended
         to include Agisoft metashape markers.
 
