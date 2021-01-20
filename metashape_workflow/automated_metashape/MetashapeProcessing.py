@@ -698,7 +698,7 @@ class AutomatedProcessing:
             if self.network:
                 self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Parameters ignored. Try running it locally.")
             else:
-                self.logger.info("Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
+                self.logger.info(f"Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
                 self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["filterDenseCloud"]["point_confidence_max"])
                 self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
                 self.doc.chunk.dense_cloud.resetFilters()
