@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* gcp\_crs bugfix
 * Bugfix of quality\_cutoff in analyze photos
 * Update close-range\_photogrammetry.yml
 * fixed quality selection based on image quality analysis

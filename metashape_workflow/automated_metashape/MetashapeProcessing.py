@@ -482,7 +482,7 @@ class AutomatedProcessing:
             "reference_preselection",
             "reference_preselection_mode",
             "filter_mask",
-            "filter_mask_tiepoints",
+            "mask_tiepoints",
             "filter_stationary_points",
             "keypoint_limit",
             "tiepoint_limit",
