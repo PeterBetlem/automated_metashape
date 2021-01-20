@@ -2,6 +2,7 @@ CHANGES
 =======
 
 * bugfix
+* bugfix
 * gcp\_crs bugfix
 * Bugfix of quality\_cutoff in analyze photos
 * Update close-range\_photogrammetry.yml

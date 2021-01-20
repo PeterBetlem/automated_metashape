@@ -328,7 +328,7 @@ class AutomatedProcessing:
                 for cam in self.doc.chunk.cameras:
                     mask_parameters["cameras"] = [cam]
                     try:
-                        self.doc.chunk.importMasks(
+                        self.doc.chunk.generateMasks(
                             **mask_parameters
                             )
                         self.logger.debug(f'Applied mask to camera {cam}')
@@ -337,7 +337,7 @@ class AutomatedProcessing:
                         pass
             else:
                 mask_count = len(mask_parameters["cameras"])
-                self.doc.chunk.importMasks(
+                self.doc.chunk.generateMasks(
                             **mask_parameters
                             )
                 
