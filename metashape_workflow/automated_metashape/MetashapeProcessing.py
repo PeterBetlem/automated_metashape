@@ -322,7 +322,7 @@ class AutomatedProcessing:
                 if key in mask_dict:
                     mask_parameters[key] = value 
             
-	    mask_parameters["path"] = str(mask_parameters["path"].resolve())
+            mask_parameters["path"] = str(mask_parameters["path"].resolve())
             self.doc.chunk.generateMasks(
                             **mask_parameters
                             )
