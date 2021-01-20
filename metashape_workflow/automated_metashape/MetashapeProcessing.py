@@ -307,13 +307,14 @@ class AutomatedProcessing:
             mask_dict = [
             "path",
             "masking_mode",
+	    "mask_operation",
             "tolerance",
             "cameras",
             "mask_defocus",
-            "keypoint_limit",
-            "mask_tiepoints",
             "fix_coverage",
+            "keypoint_limit",
             "blur_threshold",
+            "mask_tiepoints",
             ]
             
             mask_parameters = {}
@@ -321,8 +322,7 @@ class AutomatedProcessing:
                 if key in mask_dict:
                     mask_parameters[key] = value 
             
-            
-            
+	    mask_parameters["path"] = str(mask_parameters["path"].resolve())
             self.doc.chunk.generateMasks(
                             **mask_parameters
                             )
