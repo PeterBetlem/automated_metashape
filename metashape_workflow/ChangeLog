@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+v0.1.2
+------
+
+* logging bug fixes, export bugfix
 * License // filesystem // configuration updates
 * Update README.md
 * Update ChangeLog
