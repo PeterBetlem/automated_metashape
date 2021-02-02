@@ -48,6 +48,8 @@ class AutomatedProcessing:
         # self.__copyright__ = "(c) 2020, Peter Betlem"
         
     def __init__(self, config_file, logger=logging.getLogger(__name__)):
+        self._check_metashape_activated() # do this before doing anything else...
+        
         self.logger = logger
         self.__version__ = pkg_resources.get_distribution('automated_metashape').version
         # self._about()
@@ -55,10 +57,6 @@ class AutomatedProcessing:
         self.cfg = read_yaml(config_file)
         self.config_file = config_file
         
-        if not self.cfg["output_path"].exists():
-            self.cfg["output_path"].mkdir(parents=True)
-        if not self.cfg["project_path"].exists():
-            self.cfg["project_path"].mkdir(parents=True)
             
         self.run_name = self.cfg["run_name"]
         self.run_id = "_".join([self.run_name,stamp_time()])
@@ -68,7 +66,7 @@ class AutomatedProcessing:
             )
         
         self._init_logging()
-        self._check_environment()
+        self._init_filesystem()
         self._init_metashape_document()
         
         if "networkProcessing" in self.cfg and self.cfg["networkProcessing"]["enabled"]:
@@ -79,9 +77,26 @@ class AutomatedProcessing:
         else:
             self.network = False
         
-        self.init_tasks()
+    def _check_metashape_activated(self):
+        if not Metashape.license.valid:
+           raise FileNotFoundError(
+                f"Metashape license failed to validate: {Metashape.license.valid}. " +\
+                    f"Either run Metashape.license.activate('license_key_string') " +\
+                        f"in which license_key_string is the license key used for " +\
+                            f"activating Metashape. " +\
+                f"Alternatively (RECOMMENDED), create a system-wide environment path " +\
+                    f"named agisoft_LICENSE and points it to the " +\
+                        f"Metashape license file in the Agisoft Metashape directory.")
+
+    def _init_filesystem(self):
         
-        self._terminate_logging()
+        self._check_environment()
+        
+        if not self.cfg["output_path"].exists():
+            self.cfg["output_path"].mkdir(parents=True)
+        if not self.cfg["project_path"].exists():
+            self.cfg["project_path"].mkdir(parents=True)
+        
 
     def _init_logging(self):
         # TODO: add configuration to the YML file
@@ -263,9 +278,12 @@ class AutomatedProcessing:
         
         if self.network:
             self._network_submit_batch()
+        else:
             
-        if "publishData" in self.cfg and self.cfg["publishData"]["enabled"]:
-            self.publish_data()
+            if "publishData" in self.cfg and self.cfg["publishData"]["enabled"]:
+                self.publish_data()
+        
+        self._terminate_logging()
             
         del self.doc
             
@@ -286,7 +304,7 @@ class AutomatedProcessing:
         
         # TODO: provide dictionary check to add_photos as per the other functions
         self.logger.info('Initiating add_photos step...')
-        a = glob.iglob(str(Path(self.cfg["photo_path"],"**","*.*")))   #(([jJ][pP][gG])|([tT][iI][fF]))
+        a = glob.iglob(str(Path(self.cfg["addPhotos"]["photo_path"],"**","*.*")))   #(([jJ][pP][gG])|([tT][iI][fF]))
         b = [path for path in a]
         photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x) and (not re.search("_mask.",x)))]
         
@@ -307,7 +325,7 @@ class AutomatedProcessing:
             mask_dict = [
             "path",
             "masking_mode",
-	    "mask_operation",
+            "mask_operation",
             "tolerance",
             "cameras",
             "mask_defocus",
@@ -423,7 +441,7 @@ class AutomatedProcessing:
 
         self.logger.info('Adding ground control points.')
         ## Tag specific pixels in specific images where GCPs are located
-        path = Path(self.cfg["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv")
+        path = Path(self.cfg["addGCPs"]["photo_path"], "gcps", "prepared", "gcp_imagecoords_table.csv")
         marker_pixel_data = pd.read_csv(path,names=["marker","camera","x","y"])
     
         for index, row in marker_pixel_data.iterrows():
@@ -440,7 +458,7 @@ class AutomatedProcessing:
             marker.projections[camera] = Metashape.Marker.Projection((float(row.x), float(row.y)), True)
     
         ## Assign real-world coordinates to each GCP
-        path = Path(self.cfg["photo_path"], "gcps", "prepared", "gcp_table.csv")
+        path = Path(self.cfg["addGCPs"]["photo_path"], "gcps", "prepared", "gcp_table.csv")
         marker_coordinate_data = pd.read_csv(path,names=["marker","x","y","z"])
         
         for index, row in marker_coordinate_data.iterrows():
