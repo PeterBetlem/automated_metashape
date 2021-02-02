@@ -57,7 +57,6 @@ class AutomatedProcessing:
         self.cfg = read_yaml(config_file)
         self.config_file = config_file
         
-            
         self.run_name = self.cfg["run_name"]
         self.run_id = "_".join([self.run_name,stamp_time()])
         self.project_file = Path(
@@ -65,9 +64,9 @@ class AutomatedProcessing:
             '.'.join([self.run_id, 'psx']) 
             )
         
-        self._init_logging()
         self._init_filesystem()
-        self._init_metashape_document()
+        self._init_logging()
+        self._init_metashape_document() 
         
         if "networkProcessing" in self.cfg and self.cfg["networkProcessing"]["enabled"]:
             self._init_network_processing()
@@ -92,8 +91,8 @@ class AutomatedProcessing:
         
         self._check_environment()
         
-        if not self.cfg["output_path"].exists():
-            self.cfg["output_path"].mkdir(parents=True)
+        if not self.cfg["project_path"].exists():
+            self.cfg["project_path"].mkdir(parents=True)
         if not self.cfg["project_path"].exists():
             self.cfg["project_path"].mkdir(parents=True)
         
@@ -117,7 +116,7 @@ class AutomatedProcessing:
                 },
                 'file_handler': {
                     'level': 'INFO',
-                    'filename': Path(self.cfg["output_path"],self.run_id+'.log'),
+                    'filename': Path(self.cfg["project_path"],self.run_id+'.log'),
                     'class': 'logging.FileHandler',
                     'formatter': 'standard'
                 }
@@ -133,13 +132,18 @@ class AutomatedProcessing:
     
         dictConfig(log_dict)
         
-        if self.cfg["load_project_path"]:
+        if self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.log').is_file():
             copyfile(self.cfg["load_project_path"].with_suffix('.log'),
-                  Path(self.cfg["output_path"],self.run_id+'.log')
+                  Path(self.cfg["project_path"],self.run_id+'.log')
                 )
            
             self.logger.info('--------------')
             self.logger.info('Continued run initiated.')
+        elif self.cfg["load_project_path"] and not self.cfg["load_project_path"].with_suffix('.log').is_file():
+            self.logger.info('--------------')
+            self.logger.info('Unable to load original processing log. ' + \
+                            'Treating as fresh run. ' + \
+                            'Fresh run initiated.')
         else:
             self.logger.info('--------------')
             self.logger.info('Fresh run initiated.')
@@ -182,17 +186,23 @@ class AutomatedProcessing:
         self.doc.read_only = False
         
         if self.cfg["load_project_path"]:
-            self.doc.open(self.cfg["load_project_path"].resolve().with_suffix('.psx').as_posix())
+            self.doc.open(str(self.cfg["load_project_path"].resolve().with_suffix('.psx').as_posix()))
             self.logger.info(f'Loaded existing project {self.cfg["load_project_path"]}')
+            
+            if self.cfg["enable_overwrite"]:
+                self.logger.warning("Overwriting original Metashape project enabled. " + \
+                                    "Cancel run and disable self.cfg['enable_overwrite'] if unwanted behaviour!")
+                self.project_file = self.cfg["load_project_path"].resolve().with_suffix('.psx')
+        
         else:
             # Initialize a chunk, set its CRS as specified
-            self.logger.info(f'Creating new project {self.cfg["load_project_path"]}')
+            self.logger.info(f'Creating new project...')
             self.chunk = self.doc.addChunk()
             self.chunk.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
         
         # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
         self.doc.save(str(self.project_file))
-        self.logger.info(f'Saved project as {str(self.project_file)}'+self._return_parameters())
+        self.logger.info(f'Saved project as {str(self.project_file.resolve().as_posix())}'+self._return_parameters())
         
     def _init_network_processing(self):
         try:
@@ -210,7 +220,7 @@ class AutomatedProcessing:
         """
         
         # TODO: Add all other processing step options here as well
-        
+                
         if "addPhotos" in self.cfg and self.cfg["addPhotos"]["enabled"]:
             self.add_photos()
             
@@ -940,9 +950,9 @@ class AutomatedProcessing:
         Function to automatically create reports
         """
         output_file = str(Path(
-            self.cfg["output_path"], 
+            self.cfg["project_path"], 
             self.run_id+'_report.pdf'
-            ))
+            ).resolve().as_posix())
         if self.network:
             task = Metashape.Tasks.ExportReport()
             task.path = output_file
@@ -950,9 +960,12 @@ class AutomatedProcessing:
             self.logger.info(f'A processing report will be exported to {output_file}.')
             
         else:
-            self.doc.chunk.exportReport(path = output_file)
+            try:
+                self.doc.chunk.exportReport(path = output_file)
+                self.logger.info(f'A processing report has been exported to {output_file}.')
+            except:
+                self.logger.warning("Failed to export report. Export report manually.")
             self.doc.save()
-            self.logger.info(f'A processing report has been exported to {output_file}.')
     
     def _network_submit_batch(self):
         """

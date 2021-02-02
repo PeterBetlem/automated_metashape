@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 *.jpg
 metashape_workflow/AUTHORS
+config/mwe.yml
