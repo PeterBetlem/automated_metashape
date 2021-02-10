@@ -252,7 +252,7 @@ class AutomatedProcessing:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildDepthMaps"]["subdivide_task"] = self.cfg["subdivide_task"]
-            self.build_dense_cloud()
+            self.build_depth_maps()
         
         if "buildDenseCloud" in self.cfg and self.cfg["buildDenseCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts

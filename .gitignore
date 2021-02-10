@@ -130,3 +130,4 @@ dmypy.json
 *.jpg
 metashape_workflow/AUTHORS
 config/mwe.yml
+metashape_workflow/ChangeLog
