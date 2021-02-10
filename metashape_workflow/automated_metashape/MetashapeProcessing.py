@@ -189,7 +189,7 @@ class AutomatedProcessing:
             self.doc.open(str(self.cfg["load_project_path"].resolve().with_suffix('.psx').as_posix()))
             self.logger.info(f'Loaded existing project {self.cfg["load_project_path"]}')
             
-            if self.cfg["enable_overwrite"]:
+            if "enable_overwrite" in self.cfg and self.cfg["enable_overwrite"]:
                 self.logger.warning("Overwriting original Metashape project enabled. " + \
                                     "Cancel run and disable self.cfg['enable_overwrite'] if unwanted behaviour!")
                 self.project_file = self.cfg["load_project_path"].resolve().with_suffix('.psx')
@@ -247,12 +247,19 @@ class AutomatedProcessing:
             if self.cfg["subdivide_task"]: 
                 self.cfg["optimizeCameras"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.optimize_cameras()
+            
+        if "buildDepthMaps" in self.cfg and self.cfg["buildDepthMaps"]["enabled"]:
+            # TODO: find a nicer way to add subdivide_task to all dicts
+            if self.cfg["subdivide_task"]: 
+                self.cfg["buildDepthMaps"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.build_dense_cloud()
         
         if "buildDenseCloud" in self.cfg and self.cfg["buildDenseCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_dense_cloud()
+            
             
         if "filterDenseCloud" in self.cfg and self.cfg["filterDenseCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
@@ -629,11 +636,11 @@ class AutomatedProcessing:
             self.doc.save()
             self.logger.info('Optimised camera alignment.'+self._return_parameters(stage="optimizeCameras"))
             
-    def build_dense_cloud(self):
+    def build_depth_maps(self):
         
         # TODO: consider splitting into separated depth map and dense cloud steps
         
-        self.logger.info('Generating depth maps and dense cloud...')
+        self.logger.info('Generating depth maps...')
         buildDepth_dict = [
             "downscale",
             "filter_mode",
@@ -646,10 +653,31 @@ class AutomatedProcessing:
             ]
         
         depth_parameters = {}
-        for key, value in self.cfg["buildDenseCloud"].items():
+        for key, value in self.cfg["buildDepthMaps"].items():
             if key in buildDepth_dict:
                 depth_parameters[key] = value 
+                   
+        if self.network:
+            task = Metashape.Tasks.BuildDepthMaps()
+            task.decode(depth_parameters)
+            self._encode_task(task)
+            
+            self.logger.info('Depth map task added to network batch list.')
+            
+        else:
+            self.doc.chunk.buildDepthMaps(**depth_parameters)
+            self.doc.save()
+            self.logger.info('Depth maps built.')
                 
+        self._return_parameters(stage="buildDepthMaps",log=True)
+        
+               
+    def build_dense_cloud(self):
+        
+        # TODO: consider splitting into separated depth map and dense cloud steps
+        
+        self.logger.info('Generating dense cloud...')
+
         buildDense_dict = [
             "point_colors",
             "point_confidence",
@@ -679,17 +707,12 @@ class AutomatedProcessing:
             if key in classify_dict:
                 classify_parameters[key] = value
                 
-        if self.network:
-            # build depth maps only instead of also building the dense cloud ##?? what does
-            task = Metashape.Tasks.BuildDepthMaps()
-            task.decode(depth_parameters)
-            self._encode_task(task)
-        
+        if self.network:       
             # build dense cloud
             task = Metashape.Tasks.BuildDenseCloud()
             task.decode(dense_parameters)
             self._encode_task(task)
-            self.logger.info('Depth map and dense cloud tasks added to network batch list.')
+            self.logger.info('Dense cloud tasks added to network batch list.')
             
             # Classify ground points
             if self.cfg["buildDenseCloud"]["classify"]:
@@ -700,10 +723,6 @@ class AutomatedProcessing:
                 self.logger.info('Ground point classification task added to network batch list.')
             
         else:
-            self.doc.chunk.buildDepthMaps(**depth_parameters)
-            self.doc.save()
-            self.logger.info('Depth maps built.')
-            
             self.doc.chunk.buildDenseCloud(**dense_parameters)
             self.doc.save()
             self.logger.info('Dense cloud built.')
