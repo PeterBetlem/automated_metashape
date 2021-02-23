@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+v0.1.5
+------
+
+* Update ChangeLog
 * v0.1.5
 * bugfix, add version check
 * bug fix in dense cloud classify / added version check / improved dense cloud filtering method

@@ -86,10 +86,11 @@ class AutomatedProcessing:
         try:
             external = version.parse(response.json()["tag_name"])
             if internal < external:
-                print(f"automated_metashape update available ({external}). " + \
+                print(f"automated_metashape update available (local version: {internal}; repo version: {external}). " + \
                       "Please update from https://github.com/PeterBetlem/automated_metashape/releases. " +\
                      "Make sure to also check for changes in the accepted yml parameters...!")
         except:
+            print("Unable to verify remote version. Please try again.")
             pass        
         
     def _check_metashape_activated(self):
@@ -116,7 +117,7 @@ class AutomatedProcessing:
     def _init_logging(self):
         # TODO: add configuration to the YML file
         if "enable_overwrite" in self.cfg and self.cfg["enable_overwrite"] and \
-                self.cfg["load_project_path"].with_suffix('.psx').is_file():
+                self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.psx').is_file():
             log_file_name = self.cfg["load_project_path"].resolve().with_suffix('.log')
         else:
             log_file_name = Path(self.cfg["project_path"],self.run_id+'.log')
