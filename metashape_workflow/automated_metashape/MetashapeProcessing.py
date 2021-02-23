@@ -51,11 +51,11 @@ class AutomatedProcessing:
         # self.__copyright__ = "(c) 2020, Peter Betlem"
         
     def __init__(self, config_file, logger=logging.getLogger(__name__)):
+        self.__version__ = pkg_resources.get_distribution('automated_metashape').version
         self._check_metashape_activated() # do this before doing anything else...
+        self._check_automated_metashape_update_available()
         
         self.logger = logger
-        self.__version__ = pkg_resources.get_distribution('automated_metashape').version
-        # self._about()
         
         self.cfg = read_yaml(config_file)
         self.config_file = config_file
@@ -87,7 +87,8 @@ class AutomatedProcessing:
             external = version.parse(response.json()["tag_name"])
             if internal < external:
                 print(f"automated_metashape update available ({external}). " + \
-                      "Please update from https://github.com/PeterBetlem/automated_metashape/releases.)
+                      "Please update from https://github.com/PeterBetlem/automated_metashape/releases. " +\
+                     "Make sure to also check for changes in the accepted yml parameters...!")
         except:
             pass        
         
@@ -114,7 +115,12 @@ class AutomatedProcessing:
 
     def _init_logging(self):
         # TODO: add configuration to the YML file
-        
+        if "enable_overwrite" in self.cfg and self.cfg["enable_overwrite"] and \
+                self.cfg["load_project_path"].with_suffix('.psx').is_file():
+            log_file_name = self.cfg["load_project_path"].resolve().with_suffix('.log')
+        else:
+            log_file_name = Path(self.cfg["project_path"],self.run_id+'.log')
+            
         log_dict = {
             'version': 1,
             'disable_existing_loggers': False,
@@ -131,7 +137,7 @@ class AutomatedProcessing:
                 },
                 'file_handler': {
                     'level': 'INFO',
-                    'filename': Path(self.cfg["project_path"],self.run_id+'.log'),
+                    'filename': log_file_name,
                     'class': 'logging.FileHandler',
                     'formatter': 'standard'
                 }
@@ -147,21 +153,27 @@ class AutomatedProcessing:
     
         dictConfig(log_dict)
         
-        if self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.log').is_file():
+        if "enable_overwrite" in self.cfg and self.cfg["enable_overwrite"]:
+            self.logger.info('--------------')
+            self.logger.info('Continued run initiated.')
+            
+        elif self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.log').is_file():
             copyfile(self.cfg["load_project_path"].with_suffix('.log'),
                   Path(self.cfg["project_path"],self.run_id+'.log')
                 )
-           
             self.logger.info('--------------')
             self.logger.info('Continued run initiated.')
+            
         elif self.cfg["load_project_path"] and not self.cfg["load_project_path"].with_suffix('.log').is_file():
             self.logger.info('--------------')
             self.logger.info('Unable to load original processing log. ' + \
                             'Treating as fresh run. ' + \
                             'Fresh run initiated.')
+            
         else:
             self.logger.info('--------------')
             self.logger.info('Fresh run initiated.')
+    
         self.logger.info(f'Runtime id: {self.run_id}')
         self.logger.info('--------------')
 
@@ -216,7 +228,7 @@ class AutomatedProcessing:
             self.chunk.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
         
         # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
-        self.doc.save(str(self.project_file))
+        self.doc.save(str(self.project_file.resolve().as_posix()))
         self.logger.info(f'Saved project as {str(self.project_file.resolve().as_posix())}'+self._return_parameters())
         
     def _init_network_processing(self):
@@ -763,7 +775,7 @@ class AutomatedProcessing:
                 self.logger.info(f"Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
                 self.doc.chunk.dense_cloud.label = "Dense Cloud (unfiltered)"
                 original_dc = self.doc.chunk.dense_cloud.copy()
-                original_dc.label = f"Dense cloud ({self.cfg["filterDenseCloud"]["point_confidence_max"]}+ confidence)"
+                original_dc.label = f"Dense cloud ({self.cfg['filterDenseCloud']['point_confidence_max']}+ confidence)"
                 self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["filterDenseCloud"]["point_confidence_max"])
                 self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
                 self.doc.chunk.dense_cloud.resetFilters()
@@ -986,10 +998,7 @@ class AutomatedProcessing:
         """
         Function to automatically create reports
         """
-        output_file = str(Path(
-            self.cfg["project_path"], 
-            self.run_id+'_report.pdf'
-            ).resolve().as_posix())
+        output_file = str(self.project_file.resolve().with_suffix('.pdf').as_posix())
         if self.network:
             task = Metashape.Tasks.ExportReport()
             task.path = output_file
