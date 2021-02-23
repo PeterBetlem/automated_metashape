@@ -1,6 +1,9 @@
 CHANGES
 =======
 
+* bugfix, add version check
+* bug fix in dense cloud classify / added version check / improved dense cloud filtering method
+
 v0.1.4
 ------
 
