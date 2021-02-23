@@ -18,6 +18,9 @@ import yaml
 import pandas as pd
 from shutil import copyfile
 import Metashape
+import requests
+from packaging import version
+
 
 
 from .read_yaml import read_yaml
@@ -75,6 +78,18 @@ class AutomatedProcessing:
             self._return_parameters(stage="networkProcessing") 
         else:
             self.network = False
+            
+    def _check_automated_metashape_update_available(self):
+        
+        latest = requests.get("https://api.github.com/repos/PeterBetlem/automated_metashape/releases/latest")
+        internal = version.parse(self.__version__)
+        try:
+            external = version.parse(response.json()["tag_name"])
+            if internal < external:
+                print(f"automated_metashape update available ({external}). " + \
+                      "Please update from https://github.com/PeterBetlem/automated_metashape/releases.)
+        except:
+            pass        
         
     def _check_metashape_activated(self):
         if not Metashape.license.valid:
@@ -715,7 +730,7 @@ class AutomatedProcessing:
             self.logger.info('Dense cloud tasks added to network batch list.')
             
             # Classify ground points
-            if self.cfg["buildDenseCloud"]["classify"]:
+            if "classify" in self.cfg["buildDenseCloud"] and self.cfg["buildDenseCloud"]["classify"]:
         
                 task = Metashape.Tasks.ClassifyGroundPoints()
                 task.decode(classify_parameters)
@@ -727,7 +742,7 @@ class AutomatedProcessing:
             self.doc.save()
             self.logger.info('Dense cloud built.')
                        
-            if self.cfg["buildDenseCloud"]["classify"]:
+            if "classify" in self.cfg["buildDenseCloud"] and self.cfg["buildDenseCloud"]["classify"]:
                 self.doc.chunk.dense_cloud.classifyGroundPoints(**classify_parameters)
                 self.doc.save()
                 self.logger.info('Ground points classified.')
@@ -746,6 +761,9 @@ class AutomatedProcessing:
                 self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Parameters ignored. Try running it locally.")
             else:
                 self.logger.info(f"Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
+                self.doc.chunk.dense_cloud.label = "Dense Cloud (unfiltered)"
+                original_dc = self.doc.chunk.dense_cloud.copy()
+                original_dc.label = f"Dense cloud ({self.cfg["filterDenseCloud"]["point_confidence_max"]}+ confidence)"
                 self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["filterDenseCloud"]["point_confidence_max"])
                 self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
                 self.doc.chunk.dense_cloud.resetFilters()
