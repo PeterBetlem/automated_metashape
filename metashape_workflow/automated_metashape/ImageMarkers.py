@@ -19,6 +19,7 @@ import numpy as np
 import cv2
 from cv2 import aruco
 import pandas as pd
+import logging
 
 # import multiprocessing libs
 import multiprocessing as mp
@@ -40,9 +41,9 @@ class marker_detection():
         
         # create output file dir for gcps, if not existing
         self.output_file = Path(
-            self.cfg["photo_path"],"gcps","prepared","gcp_imagecoords_table.csv"
+            self.cfg["detectGCPs"]["photo_path"],"gcps","prepared","gcp_imagecoords_table.csv"
             )
-        _check_output_path(self.cfg["photo_path"])
+        _check_output_path(self.cfg["detectGCPs"]["photo_path"])
         
         self.logger.info(f"Accessing and analysing photos @ {self.cfg['photo_path']}")
         
@@ -56,7 +57,7 @@ class marker_detection():
         """
         
         # Search all images
-        a = glob.iglob(os.path.join(self.cfg["photo_path"],"**","*.*"))   #(([jJ][pP][gG])|([tT][iI][fF]))
+        a = glob.iglob(os.path.join(self.cfg["detectGCPs"]["photo_path"],"**","*.*"))   #(([jJ][pP][gG])|([tT][iI][fF]))
         b = [path for path in a]
         photo_files = [x for x in b if (re.search("(.tif$)|(.jpg$)|(.TIF$)|(.JPG$)",x) and (not re.search("dem_usgs.tif",x)))]
         
@@ -90,7 +91,7 @@ class marker_detection():
             os.path.basename(x)
             ).replace("\\","/"))
         self.image_markers.to_csv(self.output_file, mode = 'w', header = False, index = False, sep = ',')
-        self.logger.info(f'Exported pixel coordinates to {PurePath(self.cfg["photo_path"],"gcps","prepared")} folder.')
+        self.logger.info(f'Exported pixel coordinates to {PurePath(self.cfg["detectGCPs"]["photo_path"],"gcps","prepared")} folder.')
            
 def _assign_marker_coordinates_on_image(filename,aruco_dict,corner=None):
     """
@@ -182,9 +183,9 @@ class real_world_positions():
                
         # create output dir if not existing
         self.output_file = Path(
-            self.cfg["photo_path"],"gcps","prepared","gcp_table.csv"
+            self.cfg["detectGCPs"]["photo_path"],"gcps","prepared","gcp_table.csv"
             )
-        _check_output_path(self.cfg["photo_path"])
+        _check_output_path(self.cfg["detectGCPs"]["photo_path"])
         
         # automatically run either of two functions based on YML file
         if "template" in self.cfg["detectGCPs"] and self.cfg["detectGCPs"]["template"]["enabled"]:
@@ -223,7 +224,7 @@ class real_world_positions():
         # stores marker real world positions in gcp_table file.
         self.image_markers[['marker','x','y','z']].to_csv(self.output_file, mode='w', header=False,index=False,sep=',')
         
-        self.logger.info(f'Exported real world marker coordinates to {PurePath(self.cfg["photo_path"],"gcps","prepared")} folder.')
+        self.logger.info(f'Exported real world marker coordinates to {PurePath(self.cfg["detectGCPs"]["photo_path"],"gcps","prepared")} folder.')
         
     def real_world_positions_from_gpkg(self):
         self.logger.warning("This function has yet to be implemented...")

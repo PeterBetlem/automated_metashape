@@ -117,7 +117,7 @@ class AutomatedProcessing:
     def _init_logging(self):
         # TODO: add configuration to the YML file
         if "enable_overwrite" in self.cfg and self.cfg["enable_overwrite"] and \
-                self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.psx').is_file():
+                self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.log').is_file():
             log_file_name = self.cfg["load_project_path"].resolve().with_suffix('.log')
         else:
             log_file_name = Path(self.cfg["project_path"],self.run_id+'.log')
@@ -155,8 +155,13 @@ class AutomatedProcessing:
         dictConfig(log_dict)
         
         if "enable_overwrite" in self.cfg and self.cfg["enable_overwrite"]:
-            self.logger.info('--------------')
-            self.logger.info('Continued run initiated.')
+            if self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.log').is_file():
+                self.logger.info('--------------')
+                self.logger.info('Continued run initiated.')
+            else:
+                self.logger.info('--------------')
+                self.logger.info('Fresh run initiated.')
+            
             
         elif self.cfg["load_project_path"] and self.cfg["load_project_path"].with_suffix('.log').is_file():
             copyfile(self.cfg["load_project_path"].with_suffix('.log'),
@@ -471,7 +476,7 @@ class AutomatedProcessing:
         to include Agisoft metashape markers.
 
         '''
-        real_world_positions(self.cfg, logger=self.logger)
+        #real_world_positions(self.cfg, logger=self.logger)
         marker_detection(self.cfg, logger=self.logger)
         # TODO: port real_world_position class
         
