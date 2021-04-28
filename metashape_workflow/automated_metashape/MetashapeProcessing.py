@@ -242,6 +242,7 @@ class AutomatedProcessing:
             self.client = Metashape.NetworkClient()
             self.client.connect(self.cfg["networkProcessing"]["server_ip"])
             self.logger.info(f'Connected to network @ {self.cfg["networkProcessing"]["server_ip"]} running Metashape version {self.client.serverInfo()["version"]}.')
+            self.network_root = self.cfg["networkProcessing"]["network_root"]
             self.task_batch = list()
         except (RuntimeError,NameError):
             raise
@@ -292,7 +293,6 @@ class AutomatedProcessing:
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_dense_cloud()
-            
             
         if "filterDenseCloud" in self.cfg and self.cfg["filterDenseCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
@@ -1025,7 +1025,7 @@ class AutomatedProcessing:
         """
         self.doc.save()
         
-        batch_id = self.client.createBatch(str(self.project_file), self.task_batch)
+        batch_id = self.client.createBatch(str(self.project_file.relative_to(self.network_root)), self.task_batch)
         self.client.resumeBatch(batch_id)
         self.client.disconnect()
         
