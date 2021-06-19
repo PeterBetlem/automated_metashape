@@ -81,10 +81,11 @@ class AutomatedProcessing:
             
     def _check_automated_metashape_update_available(self):
         
-        latest = requests.get("https://api.github.com/repos/PeterBetlem/automated_metashape/releases/latest")
+        
         internal = version.parse(self.__version__)
         try:
-            external = version.parse(response.json()["tag_name"])
+            latest = requests.get("https://api.github.com/repos/PeterBetlem/automated_metashape/releases/latest")
+            external = version.parse(latest.json()["tag_name"])
             if internal < external:
                 print(f"automated_metashape update available (local version: {internal}; repo version: {external}). " + \
                       "Please update from https://github.com/PeterBetlem/automated_metashape/releases. " +\
