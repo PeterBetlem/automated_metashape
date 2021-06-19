@@ -42,14 +42,14 @@ __author_email__ = metadata_obj.author_email
 __repository__ = metadata_obj.url
 
 def _check_automated_metashape_update_available(logger=logging.getLogger(__name__)):
-        internal = version.parse(MetashapeProcessing.__version__)
+        internal = version.parse(pkg_resources.get_distribution('automated_metashape').version)
         try:
             latest = requests.get("https://api.github.com/repos/PeterBetlem/automated_metashape/releases/latest")
             external = version.parse(latest.json()["tag_name"])
             if internal < external:
-                logger.warning(f"automated_metashape update available \n(local version: {internal}; external version: {external}). " + \
-                      "\nPlease update from https://github.com/PeterBetlem/automated_metashape/releases.\n" +\
-                     "Make sure to check for changes in the accepted yml parameters!")
+                logger.warning(f"automated_metashape update available \n(external version: {external}). " + \
+                      "Please update from https://github.com/PeterBetlem/automated_metashape/releases. " +\
+                     "YAML parameters may have changed!")
         except:
             logger.warning("Unable to verify remote version.")
             pass    
@@ -66,7 +66,6 @@ class AutomatedProcessing:
     def __init__(self, config_file, logger=logging.getLogger(__name__)):
         self.__version__ = pkg_resources.get_distribution('automated_metashape').version
         self._check_metashape_activated() # do this before doing anything else...
-        _check_automated_metashape_update_available(logger = logger)
         
         self.logger = logger
         
@@ -184,6 +183,7 @@ class AutomatedProcessing:
 
         self.logger.info(f'Agisoft Metashape Professional Version: {Metashape.app.version}.')
         self.logger.info(f'Automated metashape package version: {self.__version__}.\n')
+        _check_automated_metashape_update_available(logger = self.logger)
         
     def _return_parameters(self,stage=None,log=None):
         with open(self.config_file) as file:
