@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Bug fix in version checking
 * implemented network\_root path
 
 v0.1.6
