@@ -49,7 +49,7 @@ def _check_automated_metashape_update_available(logger=logging.getLogger(__name_
             if internal < external:
                 logger.warning(f"automated_metashape update available \n(external version: {external}). " + \
                       "Please update from https://github.com/PeterBetlem/automated_metashape/releases. " +\
-                     "YAML parameters may have changed!")
+                     "YAML parameters may have changed!\n")
         except:
             logger.warning("Unable to verify remote version.")
             pass    
@@ -225,16 +225,15 @@ class AutomatedProcessing:
                 self.logger.warning("Overwriting original Metashape project enabled. " + \
                                     "Cancel run and disable self.cfg['enable_overwrite'] if unwanted behaviour!")
                 self.project_file = self.cfg["load_project_path"].resolve().with_suffix('.psx')
-        
         else:
             # Initialize a chunk, set its CRS as specified
             self.logger.info(f'Creating new project...')
             self.chunk = self.doc.addChunk()
             self.chunk.crs = Metashape.CoordinateSystem(self.cfg["project_crs"])
-        
-        # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
-        self.doc.save(str(self.project_file.resolve().as_posix()))
-        self.logger.info(f'Saved project as {str(self.project_file.resolve().as_posix())}'+self._return_parameters())
+
+            # Save doc doc as new project (even if we opened an existing project, save as a separate one so the existing project remains accessible in its original state)
+            self.doc.save(str(self.project_file.resolve().as_posix()))
+            self.logger.info(f'Saved project as {str(self.project_file.resolve().as_posix())}'+self._return_parameters())
         
     def _init_network_processing(self):
         try:
@@ -322,6 +321,13 @@ class AutomatedProcessing:
             if self.cfg["subdivide_task"]: 
                 self.cfg["buildDEM"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_dem()
+            
+        if "buildContours" in self.cfg and self.cfg["buildContours"]["enabled"]:
+            # TODO: find a nicer way to add subdivide_task to all dicts
+            if self.cfg["subdivide_task"]: 
+                self.cfg["buildContours"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.build_contours()
+            
             
         self.export_report()
         
@@ -508,8 +514,23 @@ class AutomatedProcessing:
     
         ## Assign real-world coordinates to each GCP
         path = Path(self.cfg["addGCPs"]["photo_path"], "gcps", "prepared", "gcp_table.csv")
-        marker_coordinate_data = pd.read_csv(path,names=["marker","x","y","z"])
         
+        marker_coordinate_data = pd.read_csv(path,names=["marker","x","y","z","dx","dy","dz"])
+        marker_coordinate_data.dropna(inplace=True,axis=1)
+        if all(marker_coordinate_data.iloc[0].apply(lambda x: isinstance(x, str))):
+            marker_coordinate_data = marker_coordinate_data[1:].reset_index(drop=True).rename(columns=marker_coordinate_data.iloc[0])
+        
+        if not all([name in ["marker","x","y","z"] for name in marker_coordinate_data.columns])
+            raise
+        
+        #try:
+        #    marker_coordinate_data = pd.read_csv(path,names=["marker","x","y","z","dx","dy","dz"])
+        #    
+        #    self.logger.info("Loaded marker coordinate data with accuracies.")
+        #except:
+        #    marker_coordinate_data = pd.read_csv(path,names=["marker","x","y","z"])
+        #    self.logger.info("Loaded marker coordinate data without accuracies.")
+        #    
         for index, row in marker_coordinate_data.iterrows():
             marker = _get_marker(self.doc.chunk, str(int(row.marker)))
             if not marker:
@@ -517,11 +538,15 @@ class AutomatedProcessing:
                 marker.label = str(int(row.marker))
                 
             marker.reference.location = (float(row.x), float(row.y), float(row.z))
-            marker.reference.accuracy = (
-                self.cfg["addGCPs"]["marker_location_accuracy"], 
-                self.cfg["addGCPs"]["marker_location_accuracy"], 
-                self.cfg["addGCPs"]["marker_location_accuracy"]
-                )
+            
+            if all([name in marker_coordinate_data.columns for name in ["dx","dy","dz"]])
+                marker.reference.accuracy = (float(row.dx), float(row.dy), float(row.dz))
+            else:
+                marker.reference.accuracy = (
+                    self.cfg["addGCPs"]["marker_location_accuracy"], 
+                    self.cfg["addGCPs"]["marker_location_accuracy"], 
+                    self.cfg["addGCPs"]["marker_location_accuracy"]
+                    )
     
         self.doc.chunk.marker_location_accuracy = (
             self.cfg["addGCPs"]["marker_location_accuracy"], 
@@ -925,45 +950,80 @@ class AutomatedProcessing:
             self.doc.save()
             self.logger.info('Tiled model constructed.'+self._return_parameters(stage="buildTiledModel"))
 
-    def build_dem(self):
+    def build_contours(self):
         '''
-        Build dem
+        Build contours
         '''
         
-        self.logger.info('Generating DEM...')
+        self.logger.info('Generating contours...')
              
-        buildDEM_dict = [
+        buildContours_dict = [
             "source_data",
-            "interpolation",
-            "projection",
-            "region",
-            "classes",
-            "flip_x",
-            "flip_y",
-            "flip_z",
-            "resolution",
-            "subdivide_task",
-            "workitem_size_tiles",
-            "max_workgroup_size"
+            "interval",
+            "min_value",
+            "max_value",
+            "prevent_intersection",
             ]
         
-        dem_parameters = {}
-        for key, value in self.cfg["buildDEM"].items():
-            if key in buildDEM_dict:
-                dem_parameters[key] = value 
+        contours_parameters = {}
+        contours_parameters["min_value"] = self.doc.chunk.elevation.min
+        contours_parameters["max_value"] = self.doc.chunk.elevation.max
+        
+        for key, value in self.cfg["buildContours"].items():
+            if key in buildContours_dict:
+                contours_parameters[key] = value 
                 
         if self.network:
-            # build dem
-            task = Metashape.Tasks.BuildDem()
-            task.decode(dem_parameters)
+            # build contours
+            task = Metashape.Tasks.BuildContours()
+            task.decode(contours_parameters)
             self._encode_task(task)
-            self.logger.info('DEM generation task added to network batch list.'+self._return_parameters(stage="buildDEM"))
+            self.logger.info('Contours generation task added to network batch list.'+self._return_parameters(stage="buildContours"))
 
-            
         else:            
-            self.doc.chunk.buildDem(**dem_parameters)
+            self.doc.chunk.buildContours(**contours_parameters)
             self.doc.save()
-            self.logger.info('DEM constructed.'+self._return_parameters(stage="buildDEM"))
+            self.logger.info('Contours extracted.'+self._return_parameters(stage="buildContours"))
+            
+        def build_dem(self):
+            '''
+            Build dem
+            '''
+
+            self.logger.info('Generating DEM...')
+
+            buildDEM_dict = [
+                "source_data",
+                "interpolation",
+                "projection",
+                "region",
+                "classes",
+                "flip_x",
+                "flip_y",
+                "flip_z",
+                "resolution",
+                "subdivide_task",
+                "workitem_size_tiles",
+                "max_workgroup_size"
+                ]
+
+            dem_parameters = {}
+            for key, value in self.cfg["buildDEM"].items():
+                if key in buildDEM_dict:
+                    dem_parameters[key] = value 
+
+            if self.network:
+                # build dem
+                task = Metashape.Tasks.BuildDem()
+                task.decode(dem_parameters)
+                self._encode_task(task)
+                self.logger.info('DEM generation task added to network batch list.'+self._return_parameters(stage="buildDEM"))
+
+
+            else:            
+                self.doc.chunk.buildDem(**dem_parameters)
+                self.doc.save()
+                self.logger.info('DEM constructed.'+self._return_parameters(stage="buildDEM"))
 
     def publish_data(self):
         """
@@ -1017,6 +1077,12 @@ class AutomatedProcessing:
             except:
                 self.logger.warning("Failed to export report. Export report manually.")
             self.doc.save()
+            
+    def export_camera_metadata(self):
+        """
+        Function to automatically export camera metadata, including coordinates, vector and activation.
+        """
+        
     
     def _network_submit_batch(self):
         """
