@@ -16,6 +16,7 @@ import logging
 from logging.config import dictConfig
 import yaml
 import pandas as pd
+import numpy as np
 from shutil import copyfile
 import Metashape
 import requests
@@ -515,10 +516,18 @@ class AutomatedProcessing:
         ## Assign real-world coordinates to each GCP
         path = Path(self.cfg["addGCPs"]["photo_path"], "gcps", "prepared", "gcp_table.csv")
         
-        marker_coordinate_data = pd.read_csv(path,names=["marker","x","y","z","dx","dy","dz"])
+        marker_coordinate_data = pd.read_csv(path)
         marker_coordinate_data.dropna(inplace=True,axis=1)
         if all(marker_coordinate_data.iloc[0].apply(lambda x: isinstance(x, str))):
             marker_coordinate_data = marker_coordinate_data[1:].reset_index(drop=True).rename(columns=marker_coordinate_data.iloc[0])
+        elif np.shape(marker_coordinate_data)[1] == 7:
+            marker_coordinate_data= (marker_coordinate_data.T.reset_index().T.reset_index(drop=True)
+            .set_axis(["marker","x","y","z","dx","dy","dz"], axis=1))
+        elif np.shape(marker_coordinate_data)[1] == 4:
+            marker_coordinate_data= (marker_coordinate_data.T.reset_index().T.reset_index(drop=True)
+            .set_axis(["marker","x","y","z"], axis=1))
+            
+        marker_coordinate_data.columns = marker_coordinate_data.columns.str.strip().str.lower()
         
         if not all([name in marker_coordinate_data.columns for name in ["marker","x","y","z"]]):
             raise
