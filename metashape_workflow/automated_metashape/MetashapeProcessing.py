@@ -93,7 +93,7 @@ class AutomatedProcessing:
         
     def _check_metashape_activated(self):
         if not Metashape.license.valid:
-           raise FileNotFoundError(
+            raise FileNotFoundError(
                 f"Metashape license failed to validate: {Metashape.license.valid}. " +\
                     f"Either run Metashape.license.activate('license_key_string') " +\
                         f"in which license_key_string is the license key used for " +\
@@ -520,7 +520,7 @@ class AutomatedProcessing:
         if all(marker_coordinate_data.iloc[0].apply(lambda x: isinstance(x, str))):
             marker_coordinate_data = marker_coordinate_data[1:].reset_index(drop=True).rename(columns=marker_coordinate_data.iloc[0])
         
-        if not all([name in ["marker","x","y","z"] for name in marker_coordinate_data.columns])
+        if not all([name in marker_coordinate_data.columns for name in ["marker","x","y","z"]]):
             raise
         
         #try:
@@ -539,7 +539,7 @@ class AutomatedProcessing:
                 
             marker.reference.location = (float(row.x), float(row.y), float(row.z))
             
-            if all([name in marker_coordinate_data.columns for name in ["dx","dy","dz"]])
+            if all([name in marker_coordinate_data.columns for name in ["dx","dy","dz"]]):
                 marker.reference.accuracy = (float(row.dx), float(row.dy), float(row.dz))
             else:
                 marker.reference.accuracy = (
