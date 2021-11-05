@@ -493,7 +493,7 @@ class AutomatedProcessing:
         Alternatively, see the https://github.com/PeterBetlem/image_processing repo for automated Python processing based on aruco markers and OpenCV
         '''
         
-        self.chunk.marker_crs = Metashape.CoordinateSystem(self.cfg["addGCPs"]["gcp_crs"])
+        self.doc.chunk.marker_crs = Metashape.CoordinateSystem(self.cfg["addGCPs"]["gcp_crs"])
 
         self.logger.info('Adding ground control points.')
         ## Tag specific pixels in specific images where GCPs are located
@@ -665,7 +665,7 @@ class AutomatedProcessing:
             "fit_b1",
             "fit_b2",
             "fit_corrections",
-            "adaptive_fitting",
+            "tiepoint_covariance",
             "fit_cx",
             "fit_cy",
             "fit_f",
