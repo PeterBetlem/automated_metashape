@@ -68,7 +68,8 @@ class AutomatedProcessing:
         self.__version__ = pkg_resources.get_distribution('automated_metashape').version
         self._check_metashape_activated() # do this before doing anything else...
         
-        self.logger = logger
+        self.logger.info()
+        self._init_logging()
         
     def read_config(self,config_file):
         self.cfg = read_yaml(config_file)
@@ -83,8 +84,6 @@ class AutomatedProcessing:
             '.'.join([self.run_id, 'psx']) 
             )
         
-        self._init_filesystem()
-        self._init_logging()
         self._init_metashape_document() 
         
         if "networkProcessing" in self.cfg and self.cfg["networkProcessing"]["enabled"]:
