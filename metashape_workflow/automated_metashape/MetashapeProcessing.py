@@ -68,6 +68,8 @@ class AutomatedProcessing:
         self.__version__ = pkg_resources.get_distribution('automated_metashape').version
         self._check_metashape_activated() # do this before doing anything else...
         
+        self.logger = logger
+        
     def read_config(self,config_file):
         self.cfg = read_yaml(config_file)
         self.config_file = config_file
