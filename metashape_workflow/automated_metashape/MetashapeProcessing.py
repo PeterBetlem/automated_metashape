@@ -64,15 +64,18 @@ class AutomatedProcessing:
         # self.__license__ = "BSD 3-Clause License"
         # self.__copyright__ = "(c) 2020, Peter Betlem"
         
-    def __init__(self, config_file, logger=logging.getLogger(__name__)):
+    def __init__(self, logger=logging.getLogger(__name__)):
         self.__version__ = pkg_resources.get_distribution('automated_metashape').version
         self._check_metashape_activated() # do this before doing anything else...
         
         self.logger = logger
         
+    def read_config(self,config_file):
         self.cfg = read_yaml(config_file)
         self.config_file = config_file
+        self.logger.info("Config file loaded.")
         
+    def init_workspace(self):
         self.run_name = self.cfg["run_name"]
         self.run_id = "_".join([self.run_name,stamp_time()])
         self.project_file = Path(
