@@ -1,3 +1,0 @@
-# Automated Metashape
-
-To be done...
