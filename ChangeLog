@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* updated to Metashape 2.x.x api
 * Connect to Zenodo for versioning
 
 v0.1.12

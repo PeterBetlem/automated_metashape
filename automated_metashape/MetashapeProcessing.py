@@ -1113,7 +1113,7 @@ class AutomatedProcessing:
         self.doc.save()
         
         batch_id = self.client.createBatch(str(self.project_file.relative_to(self.network_root)), self.task_batch)
-        self.client.setBatchPaused(batch_id, false)
+        self.client.setBatchPaused(batch_id, False)
         self.client.disconnect()
         self.logger.info("Project file has been submitted to the pc cluster for processing...")
                     
