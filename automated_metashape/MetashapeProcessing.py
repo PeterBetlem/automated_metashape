@@ -2,7 +2,7 @@
 """
 @author: Peter Betlem
 @institution: University Centre in Svalbard, Svalbard
-@year: 2020
+@year: 2023
 
 The following classes are inspired by the UC Davis work, which in full
 is documented here: https://github.com/ucdavis/metashape.
@@ -42,6 +42,7 @@ __author__ = metadata_obj.author
 __author_email__ = metadata_obj.author_email
 __repository__ = metadata_obj.url
 
+
 def _check_automated_metashape_update_available(logger=logging.getLogger(__name__)):
         internal = version.parse(pkg_resources.get_distribution('automated_metashape').version)
         try:
@@ -55,20 +56,18 @@ def _check_automated_metashape_update_available(logger=logging.getLogger(__name_
             logger.warning("Unable to verify remote version.")
             pass    
 
-class AutomatedProcessing:
+def _check_metashape_version(logger=logging.getLogger(__name__)):
+    if version.parse("2.0.0") > version.parse(pkg_resources.get_distribution('Metashape').version):
+        raise  Exception("Metashape Python version > 2.0.0 required. Please update the current installation.")
 
-    # def _about(self):
-        # self.__version__ = "2020-dec-02"
-        # self.__author__ = "Peter Betlem"
-        # self.__institution__ = "The University Centre in Svalbard"
-        # self.__license__ = "BSD 3-Clause License"
-        # self.__copyright__ = "(c) 2020, Peter Betlem"
+class AutomatedProcessing:
         
     def __init__(self, logger=logging.getLogger(__name__)):
         self.__version__ = pkg_resources.get_distribution('automated_metashape').version
         self._check_metashape_activated() # do this before doing anything else...
-        
         self.logger = logger
+
+
         
     def read_config(self,config_file):
         self.cfg = read_yaml(config_file)
@@ -105,6 +104,7 @@ class AutomatedProcessing:
                 f"Alternatively (RECOMMENDED), create a system-wide environment path " +\
                     f"named agisoft_LICENSE and points it to the " +\
                         f"Metashape license file in the Agisoft Metashape directory.")
+        _check_metashape_version()
 
     def _init_filesystem(self):
         
@@ -260,8 +260,8 @@ class AutomatedProcessing:
         if "addPhotos" in self.cfg and self.cfg["addPhotos"]["enabled"]:
             self.add_photos()
             
-        if "analyzePhotos" in self.cfg and self.cfg["analyzePhotos"]["enabled"]:
-            self.analyze_photos()
+        if "analyzeImages" in self.cfg and self.cfg["analyzeImages"]["enabled"]:
+            self.analyze_images()
             
         if "detectGCPs" in self.cfg and self.cfg["detectGCPs"]["enabled"]:
             self.detect_gcps()
@@ -290,23 +290,23 @@ class AutomatedProcessing:
                 self.cfg["buildDepthMaps"]["subdivide_task"] = self.cfg["subdivide_task"]
             self.build_depth_maps()
         
-        if "buildDenseCloud" in self.cfg and self.cfg["buildDenseCloud"]["enabled"]:
+        if "buildPointCloud" in self.cfg and self.cfg["buildPointCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
-                self.cfg["buildDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
-            self.build_dense_cloud()
+                self.cfg["buildPointCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.build_point_cloud()
             
-        if "filterDenseCloud" in self.cfg and self.cfg["filterDenseCloud"]["enabled"]:
+        if "filterPointCloud" in self.cfg and self.cfg["filterPointCloud"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
-                self.cfg["filterDenseCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
-            self.filter_dense_cloud()
+                self.cfg["filterPointCloud"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.filter_point_cloud()
             
-        if "buildMesh" in self.cfg and self.cfg["buildMesh"]["enabled"]:
+        if "buildModel" in self.cfg and self.cfg["buildModel"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
             if self.cfg["subdivide_task"]: 
-                self.cfg["buildMesh"]["subdivide_task"] = self.cfg["subdivide_task"]
-            self.build_mesh()
+                self.cfg["buildModel"]["subdivide_task"] = self.cfg["subdivide_task"]
+            self.build_model()
             
         if "buildTexture" in self.cfg and self.cfg["buildTexture"]["enabled"]:
             # TODO: find a nicer way to add subdivide_task to all dicts
@@ -443,38 +443,38 @@ class AutomatedProcessing:
         self.logger.info('Finalised adding photos.'+self._return_parameters(stage="addPhotos"))
 
     
-    def analyze_photos(self):
-        analyzePhotos_dict = [
+    def analyze_images(self):
+        analyzeImages_dict = [
             "cameras",
             "filter_mask"
             ]
-        analyzePhotos_parameters = []
-        for key, value in self.cfg["analyzePhotos"].items():
-            if key in analyzePhotos_dict:
-                analyzePhotos_parameters[key] = value 
+        analyzeImages_parameters = []
+        for key, value in self.cfg["analyzeImages"].items():
+            if key in analyzeImages_dict:
+                analyzeImages_parameters[key] = value 
                 
         if self.network:            
             self.logger.warning("Current version do not support photo selection based on photo quality - use standalone instead.")
-            task = Metashape.Tasks.AnalyzePhotos()
-            task.decode(analyzePhotos_parameters)
+            task = Metashape.Tasks.analyzeImages()
+            task.decode(analyzeImages_parameters)
             self._encode_task(task)
-            self.logger.info('Photo-analysis tasks added to network batch list.'+self._return_parameters(stage="analyzePhotos"))
+            self.logger.info('Photo-analysis tasks added to network batch list.'+self._return_parameters(stage="analyzeImages"))
 
         else:
-            self.doc.chunk.analyzePhotos()
+            self.doc.chunk.analyzeImages()
             self.logger.info('Photos analyzed.')
             
-            if "quality_cutoff" in self.cfg["analyzePhotos"]:
-                self.logger.info(f"Disabling all photos with quality values less than {self.cfg['analyzePhotos']['quality_cutoff']}.")
+            if "quality_cutoff" in self.cfg["analyzeImages"]:
+                self.logger.info(f"Disabling all photos with quality values less than {self.cfg['analyzeImages']['quality_cutoff']}.")
             else:
-                self.cfg["analyzePhotos"]["quality_cutoff"] = 0.5
+                self.cfg["analyzeImages"]["quality_cutoff"] = 0.5
                 self.logger.info(f"Disabling all photos with quality values less than 0.5 (recommended by Agisoft).")
             
-            #if not "cameras" in analyzePhotos_parameters:
-            #    analyzePhotos_parameters["cameras"] = self.doc.chunk.cameras
+            #if not "cameras" in analyzeImages_parameters:
+            #    analyzeImages_parameters["cameras"] = self.doc.chunk.cameras
                 
             for camera in self.doc.chunk.cameras:
-                if float(camera.meta['Image/Quality']) < self.cfg["analyzePhotos"]["quality_cutoff"]:
+                if float(camera.meta['Image/Quality']) < self.cfg["analyzeImages"]["quality_cutoff"]:
                     camera.enabled = False
                     self.logger.debug(f'Disabled camera {camera}')
         
@@ -590,6 +590,7 @@ class AutomatedProcessing:
             "filter_stationary_points",
             "keypoint_limit",
             "tiepoint_limit",
+            "keypoint_limit_per_mpx",
             "keep_keypoints",
             "guided_matching",
             "reset_matches",
@@ -669,6 +670,7 @@ class AutomatedProcessing:
             "fit_b2",
             "fit_corrections",
             "tiepoint_covariance",
+            "supports_gpu",
             "fit_cx",
             "fit_cy",
             "fit_f",
@@ -707,7 +709,7 @@ class AutomatedProcessing:
             
     def build_depth_maps(self):
         
-        # TODO: consider splitting into separated depth map and dense cloud steps
+        # TODO: consider splitting into separated depth map and Point Cloud steps
         
         self.logger.info('Generating depth maps...')
         buildDepth_dict = [
@@ -741,13 +743,13 @@ class AutomatedProcessing:
         self._return_parameters(stage="buildDepthMaps",log=True)
         
                
-    def build_dense_cloud(self):
+    def build_point_cloud(self):
         
-        # TODO: consider splitting into separated depth map and dense cloud steps
+        # TODO: consider splitting into separated depth map and Point Cloud steps
         
-        self.logger.info('Generating dense cloud...')
+        self.logger.info('Generating Point Cloud...')
 
-        buildDense_dict = [
+        buildPoint_dict = [
             "point_colors",
             "point_confidence",
             "keep_depth",
@@ -757,12 +759,12 @@ class AutomatedProcessing:
             "max_workgroup_size",
             ]
         
-        dense_parameters = {}
-        for key, value in self.cfg["buildDenseCloud"].items():
-            if key in buildDense_dict:
-                dense_parameters[key] = value 
+        point_parameters = {}
+        for key, value in self.cfg["buildPointCloud"].items():
+            if key in buildPoint_dict:
+                point_parameters[key] = value 
         # Point confidence should always be calculated!
-        dense_parameters["point_confidence"] = True    
+        point_parameters["point_confidence"] = True    
         
         classify_dict = [
             "max_angle",
@@ -772,19 +774,19 @@ class AutomatedProcessing:
             ]
         
         classify_parameters = {}
-        for key, value in self.cfg["buildDenseCloud"].items():
+        for key, value in self.cfg["buildPointCloud"].items():
             if key in classify_dict:
                 classify_parameters[key] = value
                 
         if self.network:       
-            # build dense cloud
-            task = Metashape.Tasks.BuildDenseCloud()
-            task.decode(dense_parameters)
+            # build Point Cloud
+            task = Metashape.Tasks.BuildPointCloud()
+            task.decode(point_parameters)
             self._encode_task(task)
-            self.logger.info('Dense cloud tasks added to network batch list.')
+            self.logger.info('Point Cloud tasks added to network batch list.')
             
             # Classify ground points
-            if "classify" in self.cfg["buildDenseCloud"] and self.cfg["buildDenseCloud"]["classify"]:
+            if "classify" in self.cfg["buildPointCloud"] and self.cfg["buildPointCloud"]["classify"]:
         
                 task = Metashape.Tasks.ClassifyGroundPoints()
                 task.decode(classify_parameters)
@@ -792,56 +794,57 @@ class AutomatedProcessing:
                 self.logger.info('Ground point classification task added to network batch list.')
             
         else:
-            self.doc.chunk.buildDenseCloud(**dense_parameters)
+            self.doc.chunk.buildPointCloud(**point_parameters)
             self.doc.save()
-            self.logger.info('Dense cloud built.')
+            self.logger.info('Point Cloud built.')
                        
-            if "classify" in self.cfg["buildDenseCloud"] and self.cfg["buildDenseCloud"]["classify"]:
-                self.doc.chunk.dense_cloud.classifyGroundPoints(**classify_parameters)
+            if "classify" in self.cfg["buildPointCloud"] and self.cfg["buildPointCloud"]["classify"]:
+                self.doc.chunk.point_cloud.classifyGroundPoints(**classify_parameters)
                 self.doc.save()
                 self.logger.info('Ground points classified.')
                 
-        self._return_parameters(stage="buildDenseCloud",log=True)
+        self._return_parameters(stage="buildPointCloud",log=True)
             
-    def filter_dense_cloud(self):
+    def filter_point_cloud(self):
         '''
-        Filters the dense cloud. 
+        Filters the Point Cloud. 
         Currently only supports local processing.
         Currently only supports point_confidence filtering
 
         '''
-        if self.cfg["filterDenseCloud"]["point_confidence_max"]:
+        if self.cfg["filterPointCloud"]["point_confidence_max"]:
             if self.network:
-                self.logger.warning("Point confidence for dense clouds currently not supported through the networking interface. Parameters ignored. Try running it locally.")
+                self.logger.warning("Point confidence for Point Clouds currently not supported through the networking interface. Parameters ignored. Try running it locally.")
             else:
-                self.logger.info(f"Removing dense points with 0<confidence<{self.cfg['filterDenseCloud']['point_confidence_max']}")
-                self.doc.chunk.dense_cloud.label = "Dense Cloud (unfiltered)"
-                original_dc = self.doc.chunk.dense_cloud.copy()
-                original_dc.label = f"Dense cloud ({self.cfg['filterDenseCloud']['point_confidence_max']}+ confidence)"
-                self.doc.chunk.dense_cloud.setConfidenceFilter(0,self.cfg["filterDenseCloud"]["point_confidence_max"])
-                self.doc.chunk.dense_cloud.removePoints(list(range(128))) #removes all "visible" points of the dense cloud
-                self.doc.chunk.dense_cloud.resetFilters()
+                self.logger.info(f"Removing point points with 0<confidence<{self.cfg['filterPointCloud']['point_confidence_max']}")
+                self.doc.chunk.point_cloud.label = "Point Cloud (unfiltered)"
+                original_dc = self.doc.chunk.point_cloud.copy()
+                original_dc.label = f"Point Cloud ({self.cfg['filterPointCloud']['point_confidence_max']}+ confidence)"
+                self.doc.chunk.point_cloud.setConfidenceFilter(0,self.cfg["filterPointCloud"]["point_confidence_max"])
+                self.doc.chunk.point_cloud.removePoints(list(range(128))) #removes all "visible" points of the Point Cloud
+                self.doc.chunk.point_cloud.resetFilters()
                 
-                self._return_parameters(stage="filterDenseCloud",log=True)
+                self._return_parameters(stage="filterPointCloud",log=True)
                 self.doc.save()
         else:
-            self.logger.warning("No filtering has occurred. Please configure 'filterDenseCloud'/'point_confidence_max' in the cfg file...")
+            self.logger.warning("No filtering has occurred. Please configure 'filterPointCloud'/'point_confidence_max' in the cfg file...")
             
-    def build_mesh(self):
+    def build_model(self):
         '''
-        Build mesh
+        Build model
         '''
-        self.logger.info('Constructing a mesh...')
+        self.logger.info('Constructing a model...')
                 
-        buildMesh_dict = [
+        buildModel_dict = [
             "surface_type",
             "interpolation",
             "face_count",
             "face_count_custom",
             "source_data",
+            "classes",
             "vertex_colors",
             "vertex_confidence",
-            "metric_masks",
+            "volumetric_masks",
             "keep_depth",
             "trimming_radius",
             "subdivide_task",
@@ -849,24 +852,24 @@ class AutomatedProcessing:
             "max_workgroup_size",
             ]
         
-        mesh_parameters = {}
-        for key, value in self.cfg["buildMesh"].items():
-            if key in buildMesh_dict:
-                mesh_parameters[key] = value 
+        model_parameters = {}
+        for key, value in self.cfg["buildModel"].items():
+            if key in buildModel_dict:
+                model_parameters[key] = value 
                 
         if self.network:
             
-            # build depth maps only instead of also building the dense cloud ##?? what does
+            # build depth maps only instead of also building the Point Cloud ##?? what does
             task = Metashape.Tasks.BuildModel()
-            task.decode(mesh_parameters)
+            task.decode(model_parameters)
             self._encode_task(task)
-            self.logger.info('Mesh-building task added to network batch list.'+self._return_parameters(stage="buildMesh"))
+            self.logger.info('Model-building task added to network batch list.'+self._return_parameters(stage="buildModel"))
                 
 
         else:
-            self.doc.chunk.buildModel(**mesh_parameters)
+            self.doc.chunk.buildModel(**model_parameters)
             self.doc.save()
-            self.logger.info('Mesh has been constructed.'+self._return_parameters(stage="buildMesh"))
+            self.logger.info('Model has been constructed.'+self._return_parameters(stage="buildModel"))
     
     def build_texture(self):
         '''
@@ -1047,14 +1050,21 @@ class AutomatedProcessing:
         publish_dict = [
             "service",
             "source",
-            "with_camera_track",
-            "export_point_colors",
+            "raster_transform",
+            "save_point_color",
+            "save_camera_track",
             "title",
             "description",
+            "owner",
+            "tags",
+            "username",
+            "account",
             "token",
             "is_draft",
             "is_private",
-            "password"
+            "password",
+            "resolution",
+            "min_zoom_level"
             ]
         
         publish_parameters = {}
@@ -1064,7 +1074,7 @@ class AutomatedProcessing:
         
         if self.network:
             self.logger.error("Metashape does currently not support publishing in network mode." + \
-                              "Init stanalone processing instead...")
+                              "Init standalone processing instead...")
         else:
             
             self.doc.chunk.publishData(**publish_parameters)
@@ -1103,9 +1113,8 @@ class AutomatedProcessing:
         self.doc.save()
         
         batch_id = self.client.createBatch(str(self.project_file.relative_to(self.network_root)), self.task_batch)
-        self.client.resumeBatch(batch_id)
+        self.client.setBatchPaused(batch_id, false)
         self.client.disconnect()
-        
         self.logger.info("Project file has been submitted to the pc cluster for processing...")
                     
         #self.doc = Metashape.Document() # needed to remove the lock on the project.    
