@@ -1000,45 +1000,45 @@ class AutomatedProcessing:
             self.doc.save()
             self.logger.info('Contours extracted.'+self._return_parameters(stage="buildContours"))
             
-        def build_dem(self):
-            '''
-            Build dem
-            '''
+    def build_dem(self):
+        '''
+        Build dem
+        '''
 
-            self.logger.info('Generating DEM...')
+        self.logger.info('Generating DEM...')
 
-            buildDEM_dict = [
-                "source_data",
-                "interpolation",
-                "projection",
-                "region",
-                "classes",
-                "flip_x",
-                "flip_y",
-                "flip_z",
-                "resolution",
-                "subdivide_task",
-                "workitem_size_tiles",
-                "max_workgroup_size"
-                ]
+        buildDEM_dict = [
+            "source_data",
+            "interpolation",
+            "projection",
+            "region",
+            "classes",
+            "flip_x",
+            "flip_y",
+            "flip_z",
+            "resolution",
+            "subdivide_task",
+            "workitem_size_tiles",
+            "max_workgroup_size"
+            ]
 
-            dem_parameters = {}
-            for key, value in self.cfg["buildDEM"].items():
-                if key in buildDEM_dict:
-                    dem_parameters[key] = value 
+        dem_parameters = {}
+        for key, value in self.cfg["buildDEM"].items():
+            if key in buildDEM_dict:
+                dem_parameters[key] = value 
 
-            if self.network:
-                # build dem
-                task = Metashape.Tasks.BuildDem()
-                task.decode(dem_parameters)
-                self._encode_task(task)
-                self.logger.info('DEM generation task added to network batch list.'+self._return_parameters(stage="buildDEM"))
+        if self.network:
+            # build dem
+            task = Metashape.Tasks.BuildDem()
+            task.decode(dem_parameters)
+            self._encode_task(task)
+            self.logger.info('DEM generation task added to network batch list.'+self._return_parameters(stage="buildDEM"))
 
 
-            else:            
-                self.doc.chunk.buildDem(**dem_parameters)
-                self.doc.save()
-                self.logger.info('DEM constructed.'+self._return_parameters(stage="buildDEM"))
+        else:            
+            self.doc.chunk.buildDem(**dem_parameters)
+            self.doc.save()
+            self.logger.info('DEM constructed.'+self._return_parameters(stage="buildDEM"))
 
     def publish_data(self):
         """
