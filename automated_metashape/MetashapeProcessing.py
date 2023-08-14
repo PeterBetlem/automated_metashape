@@ -348,8 +348,14 @@ class AutomatedProcessing:
         
         self._terminate_logging()
             
+        self.close()
+
+    def close(self):
+        """Close project safely.
+        """
+        self.logger.info("Closing project.")
         del self.doc
-            
+
     def _encode_task(self, task):
         """
         All tasks need to be encoded before submission to the Agisoft Metashape Network.

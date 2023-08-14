@@ -3,6 +3,7 @@ CHANGES
 * fix setup.cfg with upper case readme for pip install
 * fix build_dem indentation
 * allow to reload project in edition mode after an interuption on Exception
+* add method close to safely close metashape project.
 
 * updated to Metashape 2.x.x api
 * Connect to Zenodo for versioning
