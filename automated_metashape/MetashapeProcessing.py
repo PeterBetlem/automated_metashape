@@ -229,6 +229,10 @@ class AutomatedProcessing:
                 self.logger.warning("Overwriting original Metashape project enabled. " + \
                                     "Cancel run and disable self.cfg['enable_overwrite'] if unwanted behaviour!")
                 self.project_file = self.cfg["load_project_path"].resolve().with_suffix('.psx')
+                if self.doc.read_only:
+                    self.logger.warning("Allowing edition of locked Metashape project." + \
+                                        "This may occur if the project exited on Exception or if the project is still open in write mode in the GUI.")
+                    self.doc.read_only=False
         else:
             # Initialize a chunk, set its CRS as specified
             self.logger.info(f'Creating new project...')
