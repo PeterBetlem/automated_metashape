@@ -1,5 +1,6 @@
 CHANGES
 =======
+* fix setup.cfg with upper case readme for pip install
 
 * updated to Metashape 2.x.x api
 * Connect to Zenodo for versioning
