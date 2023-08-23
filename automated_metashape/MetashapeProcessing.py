@@ -767,6 +767,8 @@ class AutomatedProcessing:
             "subdivide_task",
             "workitem_size_cameras",
             "max_workgroup_size",
+            "uniform_sampling",
+            "points_spacing",
             ]
         
         point_parameters = {}
