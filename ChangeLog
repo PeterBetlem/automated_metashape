@@ -1,5 +1,10 @@
 CHANGES
 =======
+* fix setup.cfg with upper case readme for pip install
+* fix build_dem indentation
+* allow to reload project in edition mode after an interruption on Exception
+* add method close to safely close metashape project
+* fix marker detection for cv2 >= 4.7
 
 * updated to Metashape 2.x.x api
 * Connect to Zenodo for versioning

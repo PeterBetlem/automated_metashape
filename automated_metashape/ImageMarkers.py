@@ -104,13 +104,19 @@ def _assign_marker_coordinates_on_image(filename,aruco_dict,corner=None):
     
     # opencv magic
     frame = cv2.imread(filename)
-    parameters =  aruco.DetectorParameters_create()
-    corners, ids, rejectedImgPoints = aruco.detectMarkers(
-        cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),                                           
-        aruco.Dictionary_get(aruco_dict),                                   
-        parameters=parameters
-        )
-    
+    if cv2.getVersionString() < "4.7":
+        parameters =  aruco.DetectorParameters_create()
+        corners, ids, rejectedImgPoints = aruco.detectMarkers(
+            cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),                                           
+            aruco.Dictionary_get(aruco_dict),                                   
+            parameters=parameters
+            )
+    else:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        dictionary = aruco.getPredefinedDictionary(aruco_dict)
+        detector = aruco.ArucoDetector(dictionary)
+        corners, ids, _ = detector.detectMarkers(gray)
+
     # compiling all corners into np array
     corners2 = np.array([c[0] for c in corners])
     

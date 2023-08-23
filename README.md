@@ -13,4 +13,4 @@ At the bare minimum the following libraries should be installed besides the stan
 ## Usage
 Please follow the tutorial and extended manual found at:
 
-https://unisvalbard.github.io/Geo-SfM/content/lessons/l4/python.html
+https://unisvalbard.github.io/Geo-SfM/content/lessons/l3/python.html
